@@ -78,29 +78,60 @@ export async function fetchStreamOptions(
   }));
 }
 
-function normalize(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z]/g, "");
+// Filler words that carry no identity (FIFA and the directory differ on these:
+// "Bosnia *and* Herzegovina" vs "Bosnia-Herzegovina", "Korea *Republic*", etc.).
+const STOP = new Set([
+  "and", "the", "of", "vs", "v", "fc", "sc", "afc", "cf", "de", "da", "do",
+  "rep", "republic", "islamic", "dr", "ir", "pr", "national", "team", "st",
+  "saint", "north", "south", "new", "united",
+]);
+
+// Known-variant names collapsed to one canonical token so totally different
+// spellings across the two sources still match.
+const PHRASE: [RegExp, string][] = [
+  [/united states|u\.?s\.?a/, "usa"],
+  [/korea republic|republic of korea|south korea/, "southkorea"],
+  [/korea dpr|north korea/, "northkorea"],
+  [/bosnia/, "bosnia"],
+  [/cote d.?ivoire|ivory coast/, "ivory"],
+  [/turkiye|turkey/, "turkey"],
+  [/czech/, "czech"],
+  [/cabo verde|cape verde/, "capeverde"],
+  [/congo dr|dr congo|democratic republic.*congo/, "drcongo"],
+  [/curacao/, "curacao"],
+];
+
+function strip(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
-// Common name mismatches between FIFA and the stream directory.
-const ALIAS: Record<string, string> = {
-  unitedstates: "usa",
-  usa: "usa",
-  korearepublic: "southkorea",
-  southkorea: "southkorea",
-  iranislamicrepublic: "iran",
-  czechia: "czech",
-  czechrepublic: "czech",
-  turkiye: "turkey",
-  cotedivoire: "ivorycoast",
-};
-function alias(s: string): string {
-  const n = normalize(s);
-  return ALIAS[n] ?? n;
+/** Canonical identity tokens for a single team name. */
+function teamTokens(name: string): Set<string> {
+  const s = strip(name);
+  for (const [re, canon] of PHRASE) if (re.test(s)) return new Set([canon]);
+  return new Set(
+    s.split(/[^a-z]+/).filter((t) => t.length >= 3 && !STOP.has(t))
+  );
+}
+
+/** All identity tokens present in a directory match (teams + title). */
+function matchTokens(m: LiveMatch): Set<string> {
+  const out = new Set<string>();
+  const add = (s: string) => {
+    for (const t of teamTokens(s)) out.add(t);
+  };
+  if (m.home) add(m.home);
+  if (m.away) add(m.away);
+  const s = strip(m.title);
+  for (const [re, canon] of PHRASE) if (re.test(s)) out.add(canon);
+  for (const t of s.split(/[^a-z]+/))
+    if (t.length >= 3 && !STOP.has(t)) out.add(t);
+  return out;
+}
+
+function present(teamName: string, hay: Set<string>): boolean {
+  for (const t of teamTokens(teamName)) if (hay.has(t)) return true;
+  return false;
 }
 
 export interface ResolvedStream {
@@ -148,10 +179,8 @@ export function matchStreamsFor(
   awayName: string
 ): LiveMatch[] {
   if (!homeName || !awayName) return [];
-  const a = alias(homeName);
-  const b = alias(awayName);
   return matches.filter((m) => {
-    const hay = alias(`${m.home ?? ""}${m.away ?? ""}${m.title}`);
-    return hay.includes(a) && hay.includes(b);
+    const hay = matchTokens(m);
+    return present(homeName, hay) && present(awayName, hay);
   });
 }
