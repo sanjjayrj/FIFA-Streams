@@ -23,6 +23,22 @@ export function flagUrl(code: string | null | undefined): string | null {
   return `${BASE}/picture/flags-sq-4/${code}`;
 }
 
+/**
+ * FIFA player portraits (digitalhub) are full-res (~2300×3500, ~900KB each).
+ * Request a small square thumbnail via the digitalhub transform query so a
+ * 26-player squad isn't ~23MB of images.
+ */
+export function sizedPhoto(
+  url: string | null | undefined,
+  px = 160
+): string | null {
+  if (!url) return null;
+  if (url.includes("digitalhub.fifa.com") && !url.includes("io=transform")) {
+    return `${url}?io=transform:fill,width:${px},height:${px}`;
+  }
+  return url;
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
   if (!res.ok) throw new Error(`FIFA API ${res.status} for ${path}`);
@@ -259,7 +275,7 @@ export async function fetchSquad(idTeam: string): Promise<SquadPlayer[]> {
       age: ageFrom(p.BirthDate),
       heightCm: p.Height,
       weightKg: p.Weight,
-      photo: p.PlayerPicture?.PictureUrl || p.PictureUrl || null,
+      photo: sizedPhoto(p.PlayerPicture?.PictureUrl || p.PictureUrl),
       goals: p.Goals,
       yellow: p.YellowCards,
       red: p.RedCards,
@@ -594,7 +610,7 @@ function buildLineup(t: RawLiveTeam | null): TeamLineup | null {
       yellow: card.y,
       red: card.r,
       subbedOn: subbedOn.has(currentId),
-      photo: cur.PlayerPicture?.PictureUrl ?? null,
+      photo: sizedPhoto(cur.PlayerPicture?.PictureUrl ?? null),
     };
   });
 

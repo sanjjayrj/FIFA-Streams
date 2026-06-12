@@ -6,6 +6,7 @@ import {
   type SquadPlayer,
 } from "../data/fifa";
 import { useAsync, useFavourites } from "../hooks";
+import { PlayerAvatar } from "./PlayerAvatar";
 
 function SquadDetail({ team, onBack }: { team: NationTeam; onBack: () => void }) {
   const { data, loading, error } = useAsync<SquadPlayer[]>(
@@ -52,11 +53,7 @@ function SquadDetail({ team, onBack }: { team: NationTeam; onBack: () => void })
           {b.players.map((p) => (
             <div className="player-row" key={p.id}>
               <span className="player-num">{p.jersey ?? "–"}</span>
-              {p.photo ? (
-                <img className="player-photo" src={p.photo} alt="" loading="lazy" />
-              ) : (
-                <span className="player-photo placeholder">⚽</span>
-              )}
+              <PlayerAvatar src={p.photo} className="player-photo" />
               <div className="player-info">
                 <span className="player-name">{p.name}</span>
                 <span className="player-meta">

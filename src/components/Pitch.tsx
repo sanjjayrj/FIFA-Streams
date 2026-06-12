@@ -8,6 +8,7 @@ import {
   type TeamLineup,
 } from "../data/fifa";
 import { useAsync } from "../hooks";
+import { PlayerAvatar } from "./PlayerAvatar";
 
 function PlayerDot({
   p,
@@ -93,7 +94,7 @@ function Cloud({
     >
       <div className="cloud-top">
         {(p.photo || squad?.photo) && (
-          <img className="cloud-photo" src={p.photo || squad!.photo!} alt="" />
+          <PlayerAvatar src={p.photo || squad?.photo || null} className="cloud-photo" />
         )}
         <div>
           <div className="cloud-name" style={{ color }}>

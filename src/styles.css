@@ -1127,11 +1127,13 @@ kbd {
   flex-shrink: 0;
 }
 
-.player-photo.placeholder {
+.player-photo.placeholder,
+.avatar-fallback {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 16px;
+  background: var(--panel-2);
 }
 
 .player-info {
