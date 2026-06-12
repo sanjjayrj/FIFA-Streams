@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import { VitePWA } from "vite-plugin-pwa";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 const BROWSER_UA =
@@ -132,7 +133,58 @@ function streamProxy(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), streamProxy()],
+  plugins: [
+    react(),
+    streamProxy(),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["icon.svg", "apple-touch-icon.png", "favicon-32x32.png"],
+      manifest: {
+        name: "FIFA Live — Stream & Teams",
+        short_name: "FIFA Live",
+        description:
+          "Watch FIFA World Cup 2026 streams with live official data: groups, bracket, fixtures, squads, field maps and stats.",
+        theme_color: "#0a0e1a",
+        background_color: "#070b16",
+        display: "standalone",
+        orientation: "any",
+        start_url: "/",
+        icons: [
+          { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },
+          { src: "pwa-512x512.png", sizes: "512x512", type: "image/png" },
+          {
+            src: "maskable-icon-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
+          },
+        ],
+      },
+      workbox: {
+        // Precache the static shell; keep live API data network-only, but cache
+        // the immutable flag/photo images for speed and offline reuse.
+        globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/api\.fifa\.com\/api\/v3\/picture\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "fifa-flags",
+              expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/digitalhub\.fifa\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "fifa-photos",
+              expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+        ],
+      },
+    }),
+  ],
   server: {
     host: true,
     port: 5173,

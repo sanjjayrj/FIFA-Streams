@@ -5,7 +5,7 @@ import {
   type NationTeam,
   type SquadPlayer,
 } from "../data/fifa";
-import { useAsync } from "../hooks";
+import { useAsync, useFavourites } from "../hooks";
 
 function SquadDetail({ team, onBack }: { team: NationTeam; onBack: () => void }) {
   const { data, loading, error } = useAsync<SquadPlayer[]>(
@@ -81,15 +81,21 @@ function SquadDetail({ team, onBack }: { team: NationTeam; onBack: () => void })
 export function TeamsView({ teams }: { teams: NationTeam[] }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<NationTeam | null>(null);
+  const fav = useFavourites();
 
   if (selected) {
     return <SquadDetail team={selected} onBack={() => setSelected(null)} />;
   }
 
   const q = query.trim().toLowerCase();
-  const filtered = teams.filter(
-    (t) => !q || t.name.toLowerCase().includes(q) || t.code.toLowerCase().includes(q)
-  );
+  const filtered = teams
+    .filter(
+      (t) =>
+        !q || t.name.toLowerCase().includes(q) || t.code.toLowerCase().includes(q)
+    )
+    .sort(
+      (a, b) => Number(fav.has(b.code)) - Number(fav.has(a.code))
+    );
 
   return (
     <div className="teams-view">
@@ -101,16 +107,21 @@ export function TeamsView({ teams }: { teams: NationTeam[] }) {
       />
       <div className="teams-list">
         {filtered.map((t) => (
-          <button
-            className="team-row tappable"
-            key={t.id}
-            onClick={() => setSelected(t)}
-          >
-            <img className="mini-flag" src={flagUrl(t.code)!} alt="" />
-            <span className="team-name">{t.name}</span>
-            <span className="team-fifa">{t.code}</span>
-            <span className="team-chevron">›</span>
-          </button>
+          <div className="team-row tappable" key={t.id}>
+            <button
+              className="star-btn"
+              onClick={() => fav.toggle(t.code)}
+              title={fav.has(t.code) ? "Unfollow" : "Follow team"}
+            >
+              {fav.has(t.code) ? "★" : "☆"}
+            </button>
+            <button className="team-open" onClick={() => setSelected(t)}>
+              <img className="mini-flag" src={flagUrl(t.code)!} alt="" />
+              <span className="team-name">{t.name}</span>
+              <span className="team-fifa">{t.code}</span>
+              <span className="team-chevron">›</span>
+            </button>
+          </div>
         ))}
         {filtered.length === 0 && (
           <div className="teams-empty">No teams match “{query}”.</div>

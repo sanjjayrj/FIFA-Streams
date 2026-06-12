@@ -71,6 +71,20 @@ export function usePersistentState<T>(
   return [value, setValue];
 }
 
+/** Followed national teams, by FIFA/country code, persisted across sessions. */
+export function useFavourites() {
+  const [codes, setCodes] = usePersistentState<string[]>("fifa.favourites", []);
+  const has = useCallback((code: string) => codes.includes(code), [codes]);
+  const toggle = useCallback(
+    (code: string) =>
+      setCodes((prev) =>
+        prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+      ),
+    [setCodes]
+  );
+  return { codes, has, toggle };
+}
+
 /** Tracks whether `element` is currently the fullscreen element. */
 export function useFullscreen(element: HTMLElement | null) {
   const [isFullscreen, setIsFullscreen] = useState(false);

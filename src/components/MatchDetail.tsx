@@ -22,6 +22,22 @@ import {
 import { useAsync } from "../hooks";
 import { Pitch } from "./Pitch";
 
+// Icons + housekeeping filter for the full play-by-play.
+const EVENT_ICON: Record<number, string> = {
+  0: "⚽",
+  1: "🅰",
+  2: "🟨",
+  3: "🟥",
+  5: "🔁",
+  12: "🎯",
+  15: "🚩",
+  16: "⛳",
+  18: "✋",
+  57: "🧤",
+  71: "📺",
+};
+const HIDDEN_EVENT_TYPES = new Set([7, 8, 26, 78, 79, 83]);
+
 /** Past half-time? Used to switch the teams' ends like a real match. */
 function isSecondHalf(d: Detail): boolean {
   if (d.status === "finished") return true;
@@ -176,6 +192,30 @@ export function MatchDetail({
   const autoFlip = data ? isSecondHalf(data) : false;
   const flip = flipOverride ?? autoFlip;
 
+  // Full play-by-play (all event types) vs the key-events summary.
+  const [fullTimeline, setFullTimeline] = useState(false);
+  const codeOf = (teamId: string | null) =>
+    teamId === match.home.id
+      ? match.home.code
+      : teamId === match.away.id
+      ? match.away.code
+      : null;
+  const fullRows = (events ?? [])
+    .filter((e) => !HIDDEN_EVENT_TYPES.has(e.type))
+    .map((e) => ({
+      label: e.minute,
+      icon: EVENT_ICON[e.type] ?? "•",
+      teamCode: codeOf(e.teamId),
+      text: `${e.label}${
+        e.playerId && squadMap?.get(e.playerId)
+          ? ` — ${squadMap.get(e.playerId)!.name}`
+          : ""
+      }`,
+      key: e.id,
+      min: parseInt(e.minute, 10) || 0,
+    }))
+    .sort((a, b) => a.min - b.min);
+
   return (
     <div className="match-detail">
       <button className="back-btn" onClick={onBack}>
@@ -257,8 +297,37 @@ export function MatchDetail({
                     <span className="live-dot" /> {data.minute || "LIVE"}
                   </span>
                 )}
+                <span className="em-toggle">
+                  <button
+                    className={!fullTimeline ? "active" : ""}
+                    onClick={() => setFullTimeline(false)}
+                  >
+                    Key
+                  </button>
+                  <button
+                    className={fullTimeline ? "active" : ""}
+                    onClick={() => setFullTimeline(true)}
+                  >
+                    Full
+                  </button>
+                </span>
               </h3>
-              {data.events.length > 0 ? (
+              {fullTimeline ? (
+                fullRows.length > 0 ? (
+                  <div className="timeline">
+                    {fullRows.map((e) => (
+                      <div className="tl-row" key={e.key}>
+                        <span className="tl-min">{e.label}</span>
+                        <span className="tl-icon">{e.icon}</span>
+                        <span className="tl-team">{e.teamCode}</span>
+                        <span className="tl-text">{e.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mp-muted">No play-by-play yet.</div>
+                )
+              ) : data.events.length > 0 ? (
                 <div className="timeline">
                   {data.events.map((e, i) => (
                     <div className="tl-row" key={i}>

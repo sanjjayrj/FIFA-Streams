@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { flagUrl, type Match } from "../data/fifa";
+import { useFavourites } from "../hooks";
 
 function dayLabel(ms: number): string {
   return new Date(ms).toLocaleDateString(undefined, {
@@ -52,15 +53,22 @@ export function FixturesView({
 }) {
   const [stage, setStage] = useState<string>("All");
   const [liveOnly, setLiveOnly] = useState(false);
+  const [favOnly, setFavOnly] = useState(false);
+  const fav = useFavourites();
+  const involvesFav = (m: Match) =>
+    (m.home.code != null && fav.has(m.home.code)) ||
+    (m.away.code != null && fav.has(m.away.code));
 
   const filtered = useMemo(
     () =>
       matches.filter(
         (m) =>
           (stage === "All" || m.stage === stage) &&
-          (!liveOnly || m.status === "live")
+          (!liveOnly || m.status === "live") &&
+          (!favOnly || involvesFav(m))
       ),
-    [matches, stage, liveOnly]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [matches, stage, liveOnly, favOnly, fav.codes]
   );
 
   const byDay = useMemo(() => {
@@ -95,7 +103,15 @@ export function FixturesView({
             checked={liveOnly}
             onChange={(e) => setLiveOnly(e.target.checked)}
           />
-          Live only
+          Live
+        </label>
+        <label className="fx-live-toggle" title="Only matches with a team you follow">
+          <input
+            type="checkbox"
+            checked={favOnly}
+            onChange={(e) => setFavOnly(e.target.checked)}
+          />
+          ★ Following
         </label>
       </div>
 
@@ -124,6 +140,7 @@ export function FixturesView({
                   <span className="fx-time">⏱ {timeLabel(m.kickoff)}</span>
                 )}
                 <span className="fx-stage">
+                  {involvesFav(m) && <span className="fx-star">★</span>}
                   {m.group || m.stage} ›
                 </span>
               </div>

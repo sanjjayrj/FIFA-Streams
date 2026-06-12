@@ -1083,6 +1083,113 @@ kbd {
   color: #fff;
 }
 
+/* Live score ticker */
+.score-ticker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 20px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(13, 20, 36, 0.6);
+  position: sticky;
+  top: 57px;
+  z-index: 9;
+  backdrop-filter: blur(8px);
+}
+.tk-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--live);
+  flex-shrink: 0;
+}
+.tk-track {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.tk-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: default;
+  white-space: nowrap;
+}
+.tk-item.live {
+  cursor: pointer;
+  border-color: rgba(255, 59, 92, 0.4);
+}
+.tk-item.live:hover {
+  border-color: var(--accent);
+}
+.tk-item.fav {
+  background: rgba(244, 196, 48, 0.08);
+}
+.tk-star {
+  color: #ffd34d;
+  font-size: 11px;
+}
+.tk-side {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.tk-flag {
+  width: 18px;
+  height: 12px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+.tk-code {
+  font-weight: 700;
+}
+.tk-score {
+  font-weight: 800;
+}
+.tk-meta {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* Favourite stars */
+.star-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+.star-btn:hover {
+  color: #ffd34d;
+}
+.team-open {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+}
+.fx-star {
+  color: #ffd34d;
+  margin-right: 4px;
+}
+
 /* Auto-load status banner */
 .auto-banner {
   background: linear-gradient(90deg, rgba(22, 193, 114, 0.16), transparent);

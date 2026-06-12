@@ -3,9 +3,10 @@ import { Player } from "./components/Player";
 import { SourceBar, type Source } from "./components/SourceBar";
 import { DataPanel } from "./components/DataPanel";
 import { BracketOverlay } from "./components/BracketOverlay";
+import { ScoreTicker } from "./components/ScoreTicker";
 import { usePersistentState } from "./hooks";
 import { extractEmbedUrl, extractTitle } from "./utils";
-import { fetchMatches, pickLatestMatch } from "./data/fifa";
+import { fetchMatches, pickLatestMatch, type Match } from "./data/fifa";
 import { bestStreamFor } from "./data/streams";
 
 // The embed the user started with, pre-loaded on first run.
@@ -84,6 +85,28 @@ export default function App() {
       loadSource({ url, title, addedAt: Date.now() });
     },
     [loadSource]
+  );
+
+  // Resolve and load a specific match's live stream (from the ticker).
+  const watchMatch = useCallback(
+    async (m: Match) => {
+      if (!m.home.name || !m.away.name) return;
+      setAutoStatus(`Loading ${m.home.name} vs ${m.away.name}…`);
+      try {
+        const s = await bestStreamFor(m.home.name, m.away.name);
+        if (s) {
+          loadStream(s.url, `🔴 ${s.title}`);
+          setAutoStatus(null);
+        } else {
+          setAutoStatus(
+            `No live stream found for ${m.home.name} vs ${m.away.name} yet.`
+          );
+        }
+      } catch {
+        setAutoStatus("Couldn’t load that stream.");
+      }
+    },
+    [loadStream]
   );
 
   // On startup, find the latest live/recent World Cup match and auto-load its
@@ -169,6 +192,8 @@ export default function App() {
         onClose={() => setShowBracket(false)}
         onLoadStream={loadStream}
       />
+
+      <ScoreTicker onWatch={watchMatch} />
 
       <main className="layout">
         <section className="main-col">
