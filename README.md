@@ -1,0 +1,202 @@
+# FIFA Live — Stream & Teams
+
+A web app to watch a FIFA stream from any embed code, switch the source on the
+fly, go fullscreen, and browse national-team data alongside the broadcast.
+
+## Run it
+
+```bash
+npm install
+npm run dev      # http://localhost:5173
+```
+
+Build for production:
+
+```bash
+npm run build
+npm run preview
+```
+
+## Features
+
+- **Stream player** — renders the embed in a 16:9 stage with a loading state.
+  The opening-ceremony embed is pre-loaded on first run.
+- **Switch the source anytime** — paste a full `<iframe …>` embed code *or* a
+  bare stream URL into the source bar and hit **Load stream**. The app pulls the
+  `src` out of the iframe for you. Recent sources are saved as chips you can
+  click to switch back to (persisted in `localStorage`).
+- **Fullscreen** — the player has a Fullscreen button (uses the native
+  Fullscreen API), or press the button to toggle. Works for the video stage.
+- **Live indicator** — a pulsing LIVE badge; toggle it with the **Live**
+  checkbox in the source bar.
+- **Two playback modes (auto-detected):**
+  - **Iframe** for embed pages (e.g. `embed.st`). Plays exactly as the provider
+    serves it. _No `sandbox` is applied_ — `embed.st` detects sandbox and refuses
+    with a "remove sandbox attributes" overlay, so it's gone.
+- **Pop-up shield** (iframe mode, on by default) — a web page **cannot close a
+  tab that a cross-origin iframe opens** (it never gets a handle to it), so the
+  shield does the next best thing: a transparent layer over the embed that
+  **absorbs the stray taps the ad script needs to fire a pop-under**, so the ad
+  tab never opens. The live video keeps playing underneath. Toggle it from the
+  player bar (**🛡 Shield on/off**), or tap the on-screen pill to unlock the
+  embed's own controls.
+  - **Native HLS** (hls.js) for any direct `.m3u8` URL. This bypasses the
+    ad-laden embed page entirely: **no ads, real `<video>` controls**, and it's
+    what the field-map overlay is designed around. Just load a `.m3u8` link and
+    the player switches to it automatically (the host chip shows "HLS · ad-free").
+
+### Live FIFA data (official)
+
+The right-hand panel pulls **live, official data from the FIFA Data API**
+(`api.fifa.com/api/v3`, World Cup 2026 — competition `17`, season `285023`). It
+sends `Access-Control-Allow-Origin: *`, so the browser calls it directly — no
+proxy, no API key. Match data auto-refreshes every 30 seconds.
+
+- **Groups** — all 12 group tables (A–L), with standings computed live from the
+  official match feed: Played / W / D / L / GD / Pts, top two highlighted.
+- **Fixtures** — every match with live/finished/upcoming status, the live
+  minute, scores, venue, and a stage filter (group stage → final). A badge shows
+  how many matches are live right now.
+- **Teams** — all 48 qualified nations; tap one to load its full 26-player squad
+  with photos, shirt numbers, positions, ages, and goals/cards.
+- **Match detail + live field map** — click any fixture to open its detail page:
+  full date/time, venue, referee, attendance, a **scrollable timeline** of
+  goals/cards/subs, and an **SVG pitch showing both teams' formations** with the
+  players currently on the field. The lineup is read from FIFA's live feed
+  (`/live/football/...`), positioned by the official formation string (e.g.
+  `4-1-2-3`), with captain markers, goal/card badges, and **live substitutions
+  applied to the formation slots** (a subbed-on player takes the slot of the
+  player they replaced). For live matches it polls every 30 s. If the starting
+  XIs aren't announced yet, it says so. **Tap any player** on the pitch for a
+  stat card — photo, shirt number, position, captaincy, age/height/weight (from
+  the squad feed), goals, and cards.
+
+All of this lives in `src/data/fifa.ts`. To point at a different competition or
+season, change the `COMPETITION` / `SEASON` constants there.
+
+### Stream discovery (auto-find streams per match)
+
+Each match detail page has a **"Watch this match"** section that queries the free
+[streamed.pk](https://streamed.pk/docs) directory API, matches the fixture by
+team names, and lists every available stream (with language, HD flag, and viewer
+count). Click one to load it into the player. The `admin` source it returns is
+`embed.st` itself — the same provider as the original embed — so these play in
+iframe mode. Source: `src/data/streams.ts`.
+
+### Auto-load the latest match
+
+On startup the app fetches the FIFA fixtures, picks the **current match** (the
+live one if any, else the most recently kicked-off), finds its stream via the
+directory API, and loads it into the player automatically — so the latest game
+is ready to play without pasting anything. A banner shows what it found.
+
+### Automated stream extraction (headless-Firefox workaround)
+
+Embed providers like `embed.st` decode and tokenize their `.m3u8` at runtime, so
+you normally need a real browser session to see it. `scripts/extract-stream.mjs`
+**is** that browser session: it drives a headless Firefox (Playwright), sniffs the
+network for the real playlist, and returns it with the required `Referer`.
+
+It's available as a dev `/resolve?embed=<url>` endpoint and a CLI. (The in-app
+"Ad-free" button was **removed** — see the caveat below; for `embed.st` it always
+failed, so the **pop-up shield** replaced it.)
+
+- **CLI / inspection:**
+  ```bash
+  node scripts/extract-stream.mjs "https://embed.st/embed/admin/<id>/1"
+  # → { ok, m3u8, referer, candidates }
+  ```
+
+**Important caveat for `embed.st`/`strmd.st`:** their secure tokens are
+*single-use* — the in-page P2P player consumes the token on first fetch, so the
+extracted URL **403s when replayed** by the proxy (verified). Extraction still
+**finds** the URL (useful for inspection and for providers that don't single-use
+their tokens), but for embed.st specifically there's no ad-free replay; use the
+manual route below if you want to try other sources.
+
+### Manual route: getting a direct `.m3u8`
+
+1. Open the embed page in your browser → **DevTools → Network**, filter `m3u8`.
+2. Press play; a request ending in **`.m3u8`** appears → **Copy URL**.
+3. Paste it into the source bar. The player detects `.m3u8` and plays it
+   natively (hls.js) — ad-free.
+4. If it 403s on CORS/referer, wrap it through the proxy (see below).
+
+**If the `.m3u8` won't play** (CORS error, or "403/referer" — common for
+aggregator streams that require a `Referer: https://embedme.top/` header), route
+it through the built-in dev proxy, which adds the header and CORS server-side:
+
+```
+/stream-proxy?url=<URL-ENCODED-M3U8>&referer=<URL-ENCODED-REFERER>
+```
+
+Paste *that* path into the source bar. The proxy (in `vite.config.ts`, dev-only)
+fetches the playlist and segments with the right headers and rewrites child URLs
+to keep flowing through it. Example:
+
+```
+/stream-proxy?url=https%3A%2F%2Fexample.com%2Flive%2Fstream.m3u8&referer=https%3A%2F%2Fembedme.top%2F
+```
+
+### Where the stream links actually come from
+
+Traced empirically (DevTools + the extractor):
+
+- `streamed.pk` / `streamed.su` is a **directory** — it doesn't host video. Its
+  `admin` source returns `embed.st` player pages; other sources (`echo`,
+  `delta`, `golf`) are other re-streamer front-ends.
+- `embed.st`'s player (Clappr + a SwarmCloud **P2P HLS** engine) loads the actual
+  video from **`lbNN.strmd.st/secure/<token>/…/playlist.m3u8`** — a
+  load-balanced CDN (`lb8`, `lb11`, `lb17`, `lb20`, … `.strmd.st`) with a
+  per-session, single-use token.
+- The language labels in the directory (`English - ITV1`, `English - FS1`) reveal
+  the ultimate origin: **broadcaster feeds (ITV, Fox Sports, etc.) re-captured**
+  and re-served through `strmd.st`. So the "loophole" these sites use isn't an
+  open broadcaster API — it's re-streaming the TV feeds onto their own
+  token-gated CDN.
+
+### Is there a FIFA / Fox loophole? (researched)
+
+Short answer: no clean open `.m3u8`.
+
+- **FIFA+** (`plus.fifa.com`) streams some FIFA football free, but **not** the
+  men's World Cup live (US rights are Fox/Telemundo). Its `/api/*` paths return
+  the SPA shell; the real video API is auth/DRM-gated.
+- **Fox Sports** requires a TV-provider login (TVE) and uses DRM.
+- **Tubi** (US, free) carries the opener + a couple of matches but is
+  **Widevine-DRM** protected — no raw `.m3u8`.
+- **BBC iPlayer / ITVX** (UK) and **SBS On Demand** (AU) are free and air every
+  match, but are **geo-locked + DRM** — they need an in-region session (VPN) and
+  a Widevine CDM, which a plain browser `<video>` can't do.
+
+The practical, reliable path for *this* app remains: the iframe embed (with the
+provider's ads) for one-click viewing, or a manually-grabbed non-single-use
+`.m3u8` played ad-free through the proxy.
+
+### Official free broadcasters (verified, geo-restricted)
+
+Every 2026 match is free-to-air in several regions — these are the legitimate,
+ad-light/ad-free official streams (you'll need to be in-region or use the
+provider's own site):
+
+- **UK** — BBC iPlayer & ITVX (free with a TV licence)
+- **Australia** — SBS On Demand (every match free)
+- **USA** — Tubi (free; carries the opening ceremony, Mexico–South Africa, and
+  USA–Paraguay). Tubi streams are DRM-protected, so they play on tubi.tv, not as
+  a raw `.m3u8`.
+
+### Keyboard shortcuts
+
+| Key | Action            |
+| --- | ----------------- |
+| `t` | Toggle data panel |
+| `r` | Reload stream     |
+
+## A note on embeds
+
+Some streaming hosts send `X-Frame-Options` / CSP `frame-ancestors` headers that
+forbid being embedded on other origins. If a particular embed shows a blank or
+"refused to connect" frame, that restriction is coming from the host, not this
+app — the app handles the embed correctly; the host is blocking iframing. Most
+PPV/embed providers (like `embed.st`) allow it, which is the whole point of an
+embed URL.
