@@ -51,6 +51,6 @@ export function hostOf(url: string): string {
 export function classifySource(url: string): "hls" | "iframe" {
   if (/\.m3u8(\?|#|$)/i.test(url)) return "hls";
   if (/[?&]url=.+\.m3u8/i.test(url)) return "hls"; // proxied playlist
-  if (url.startsWith("/stream-proxy")) return "hls";
+  if (url.startsWith("/api/stream-proxy")) return "hls";
   return "iframe";
 }

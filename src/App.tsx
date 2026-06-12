@@ -4,7 +4,7 @@ import { SourceBar, type Source } from "./components/SourceBar";
 import { DataPanel } from "./components/DataPanel";
 import { BracketOverlay } from "./components/BracketOverlay";
 import { ScoreTicker } from "./components/ScoreTicker";
-import { usePersistentState } from "./hooks";
+import { usePersistentState, useTheme } from "./hooks";
 import { extractEmbedUrl, extractTitle } from "./utils";
 import { fetchMatches, pickLatestMatch, type Match } from "./data/fifa";
 import { bestStreamFor } from "./data/streams";
@@ -41,6 +41,7 @@ export default function App() {
     true
   );
   const [showBracket, setShowBracket] = useState(false);
+  const [theme, toggleTheme] = useTheme();
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -170,6 +171,16 @@ export default function App() {
           <span className="brand-sub">Stream &amp; Teams</span>
         </div>
         <div className="topbar-actions">
+          <button
+            className="theme-toggle"
+            onClick={toggleTheme}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            aria-label="Toggle theme"
+          >
+            <span className={`tt-track ${theme}`}>
+              <span className="tt-thumb">{theme === "dark" ? "☾" : "☀"}</span>
+            </span>
+          </button>
           <button
             className="ghost-btn accent"
             onClick={() => setShowBracket(true)}

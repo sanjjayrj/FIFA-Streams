@@ -10,11 +10,33 @@
   --accent-2: #2dd4bf;
   --live: #ff3b5c;
   --radius: 12px;
+  --app-bg: radial-gradient(1200px 600px at 70% -10%, #14233f 0%, #070b16 55%);
+  --bar-bg: rgba(13, 20, 36, 0.7);
+  --overlay-bg: rgba(5, 8, 16, 0.97);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   /* Tell the browser this is a dark UI so native controls (select dropdowns,
      inputs, scrollbars, option lists) render light-on-dark instead of the
      default black-on-white that looked like "black text" in the panels. */
   color-scheme: dark;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+:root[data-theme="light"] {
+  --bg: #eaeef6;
+  --bg-2: #ffffff;
+  --panel: #ffffff;
+  --panel-2: #f1f4fa;
+  --border: #d7deea;
+  --text: #0f1828;
+  --muted: #5d6982;
+  --accent: #0a9d5f;
+  --accent-2: #0d9488;
+  --live: #e11d48;
+  --app-bg: radial-gradient(1200px 600px at 70% -10%, #d6e4ff 0%, #eaeef6 55%);
+  --bar-bg: rgba(255, 255, 255, 0.82);
+  --overlay-bg: rgba(234, 238, 246, 0.97);
+  --shadow: 0 10px 28px rgba(20, 35, 63, 0.14);
+  color-scheme: light;
 }
 
 * {
@@ -44,8 +66,35 @@ body,
 }
 
 body {
-  background: radial-gradient(1200px 600px at 70% -10%, #14233f 0%, var(--bg) 55%);
+  background: var(--app-bg);
+  background-attachment: fixed;
   color: var(--text);
+}
+
+/* Smooth theme switch on the main surfaces. */
+body,
+.topbar,
+.score-ticker,
+.player,
+.source-bar,
+.data-panel,
+.player-note,
+.bk-card,
+.gm-card,
+.group-card,
+.fx-card,
+.team-row {
+  transition: background-color 0.25s ease, border-color 0.25s ease,
+    color 0.25s ease;
+}
+
+/* Keyboard focus visibility (accessibility polish). */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+button {
+  outline: none;
 }
 
 .app {
@@ -61,11 +110,57 @@ body {
   justify-content: space-between;
   padding: 14px 20px;
   border-bottom: 1px solid var(--border);
-  background: rgba(13, 20, 36, 0.7);
+  background: var(--bar-bg);
   backdrop-filter: blur(8px);
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Day / night toggle switch */
+.theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+}
+.tt-track {
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  transition: background 0.25s;
+}
+.tt-track.light {
+  justify-content: flex-end;
+  background: #ffe08a;
+}
+.tt-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s;
+}
+.tt-track.dark .tt-thumb {
+  background: #0f1828;
+  color: #cfe;
 }
 
 .brand {
@@ -341,7 +436,7 @@ body {
 }
 
 .source-error {
-  color: #ffb4c0;
+  color: var(--live);
   background: rgba(255, 59, 92, 0.1);
   border: 1px solid rgba(255, 59, 92, 0.3);
   padding: 8px 12px;
@@ -659,7 +754,7 @@ kbd {
 }
 
 .panel-error {
-  color: #ffb4c0;
+  color: var(--live);
 }
 
 .spinner.small {
@@ -806,6 +901,13 @@ kbd {
   margin-bottom: 8px;
 }
 
+.fx-card {
+  transition: transform 0.12s ease, border-color 0.15s ease;
+}
+.fx-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
 .fx-card.status-live {
   border-color: rgba(255, 59, 92, 0.5);
   box-shadow: 0 0 0 1px rgba(255, 59, 92, 0.2);
@@ -1090,7 +1192,7 @@ kbd {
   gap: 12px;
   padding: 7px 20px;
   border-bottom: 1px solid var(--border);
-  background: rgba(13, 20, 36, 0.6);
+  background: var(--bar-bg);
   position: sticky;
   top: 57px;
   z-index: 9;
@@ -1610,7 +1712,7 @@ kbd {
 }
 .cloud-chip.c-red {
   border-color: var(--live);
-  color: #ffb4c0;
+  color: var(--live);
 }
 .cloud-chip.c-cap {
   border-color: #ffd34d;
@@ -1742,7 +1844,65 @@ kbd {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: default;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s;
+}
+.ep-dot:hover {
+  transform: translate(-50%, -50%) scale(1.25);
+}
+.ep-dot.active {
+  transform: translate(-50%, -50%) scale(1.3);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6);
+  z-index: 4;
+}
+
+/* Event-map "who took it" bubble */
+.ep-bubble {
+  position: absolute;
+  z-index: 5;
+  min-width: 120px;
+  max-width: 180px;
+  background: rgba(10, 14, 26, 0.97);
+  color: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 7px 10px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+}
+.ep-bubble.above {
+  transform: translate(-50%, calc(-100% - 14px));
+}
+.ep-bubble.below {
+  transform: translate(-50%, 14px);
+}
+.ep-bubble-player {
+  font-weight: 800;
+  font-size: 12px;
+}
+.ep-bubble-meta {
+  font-size: 11px;
+  color: #aeb9d4;
+  margin-top: 1px;
+}
+.ep-bubble-tail {
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: rgba(10, 14, 26, 0.97);
+  border: 1px solid var(--border);
+  transform: translateX(-50%) rotate(45deg);
+}
+.ep-bubble.above .ep-bubble-tail {
+  bottom: -6px;
+  border-top: none;
+  border-left: none;
+}
+.ep-bubble.below .ep-bubble-tail {
+  top: -6px;
+  border-bottom: none;
+  border-right: none;
 }
 .ep-dot.other {
   width: 7px;
@@ -2084,7 +2244,7 @@ kbd {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(5, 8, 16, 0.97);
+  background: var(--overlay-bg);
   backdrop-filter: blur(4px);
   display: flex;
   flex-direction: column;

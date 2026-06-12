@@ -71,6 +71,45 @@ export function usePersistentState<T>(
   return [value, setValue];
 }
 
+export type Theme = "dark" | "light";
+
+/**
+ * App theme. Initial value: the user's saved choice, else their OS preference,
+ * else dark. Applied via `data-theme` on <html> and persisted.
+ */
+export function useTheme(): [Theme, () => void] {
+  const [theme, setTheme] = useState<Theme>(() => {
+    try {
+      const stored = localStorage.getItem("fifa.theme");
+      if (stored === "light" || stored === "dark") return stored;
+    } catch {
+      /* ignore */
+    }
+    return typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-color-scheme: light)").matches
+      ? "light"
+      : "dark";
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", theme === "light" ? "#eaeef6" : "#0a0e1a");
+    try {
+      localStorage.setItem("fifa.theme", theme);
+    } catch {
+      /* ignore */
+    }
+  }, [theme]);
+
+  const toggle = useCallback(
+    () => setTheme((t) => (t === "dark" ? "light" : "dark")),
+    []
+  );
+  return [theme, toggle];
+}
+
 /** Followed national teams, by FIFA/country code, persisted across sessions. */
 export function useFavourites() {
   const [codes, setCodes] = usePersistentState<string[]>("fifa.favourites", []);

@@ -21,7 +21,7 @@ function streamProxy(): Plugin {
     name: "hls-stream-proxy",
     configureServer(server) {
       server.middlewares.use(
-        "/stream-proxy",
+        "/api/stream-proxy",
         async (req: IncomingMessage, res: ServerResponse) => {
           try {
             const u = new URL(req.url ?? "", "http://localhost");
@@ -67,7 +67,7 @@ function streamProxy(): Plugin {
               const rewrite = (ref: string) => {
                 if (!ref || ref.startsWith("#")) return ref;
                 const abs = new URL(ref, base).toString();
-                return `/stream-proxy?url=${encodeURIComponent(
+                return `/api/stream-proxy?url=${encodeURIComponent(
                   abs
                 )}&referer=${encodeURIComponent(referer)}`;
               };

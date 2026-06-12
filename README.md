@@ -19,9 +19,10 @@ npm run preview
 
 ## Deploy (Vercel)
 
-The app is a static SPA — all data is fetched client-side from CORS-open APIs, so
-no backend is needed in production. The two dev-only endpoints (`/stream-proxy`,
-`/resolve`) don't ship and aren't used by the UI.
+The app is a static SPA — all data is fetched client-side from CORS-open APIs.
+The HLS proxy ships as a Vercel serverless function (`api/stream-proxy.js`, served
+at `/api/stream-proxy`); the dev server exposes the same path. The `/resolve`
+extractor is dev-only (needs a headless browser) and isn't used by the UI.
 
 Fastest path (Vercel CLI, no GitHub needed):
 
@@ -155,7 +156,7 @@ aggregator streams that require a `Referer: https://embedme.top/` header), route
 it through the built-in dev proxy, which adds the header and CORS server-side:
 
 ```
-/stream-proxy?url=<URL-ENCODED-M3U8>&referer=<URL-ENCODED-REFERER>
+/api/stream-proxy?url=<URL-ENCODED-M3U8>&referer=<URL-ENCODED-REFERER>
 ```
 
 Paste *that* path into the source bar. The proxy (in `vite.config.ts`, dev-only)
@@ -163,7 +164,7 @@ fetches the playlist and segments with the right headers and rewrites child URLs
 to keep flowing through it. Example:
 
 ```
-/stream-proxy?url=https%3A%2F%2Fexample.com%2Flive%2Fstream.m3u8&referer=https%3A%2F%2Fembedme.top%2F
+/api/stream-proxy?url=https%3A%2F%2Fexample.com%2Flive%2Fstream.m3u8&referer=https%3A%2F%2Fembedme.top%2F
 ```
 
 ### Where the stream links actually come from

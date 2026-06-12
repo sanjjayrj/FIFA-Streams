@@ -18,6 +18,7 @@ export function EventMap({
   squad: Map<string, SquadPlayer> | null;
 }) {
   const [shotsOnly, setShotsOnly] = useState(true);
+  const [sel, setSel] = useState<string | null>(null);
 
   const located = useMemo(
     () => events.filter((e) => e.x != null && e.y != null),
@@ -34,6 +35,10 @@ export function EventMap({
     teamId && teamId === awayId ? AWAY_PINK : GOAL_GREEN;
   const nameOf = (id: string | null) =>
     (id && squad?.get(id)?.name) || "";
+  const codeOf = (teamId: string | null) =>
+    teamId && teamId === awayId ? awayCode : homeCode;
+
+  const selected = shown.find((e) => e.id === sel) ?? null;
 
   return (
     <div className="mp-section">
@@ -55,27 +60,50 @@ export function EventMap({
         </span>
       </h3>
 
-      <div className="event-pitch">
+      <div className="event-pitch" onClick={() => setSel(null)}>
         <div className="ep-line halfway" />
         <div className="ep-circle" />
         <div className="ep-box left" />
         <div className="ep-box right" />
         {shown.map((e) => (
-          <span
+          <button
             key={e.id}
-            className={`ep-dot ${e.isGoal ? "goal" : e.isShot ? "shot" : "other"}`}
+            className={`ep-dot ${
+              e.isGoal ? "goal" : e.isShot ? "shot" : "other"
+            } ${sel === e.id ? "active" : ""}`}
             style={{
               left: `${e.x}%`,
               top: `${e.y}%`,
               background: colorOf(e.teamId),
             }}
-            title={`${e.label} · ${e.minute}${
-              nameOf(e.playerId) ? ` · ${nameOf(e.playerId)}` : ""
-            }`}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              setSel((cur) => (cur === e.id ? null : e.id));
+            }}
           >
             {e.isGoal ? "⚽" : ""}
-          </span>
+          </button>
         ))}
+
+        {selected && (
+          <div
+            className={`ep-bubble ${(selected.y ?? 0) > 30 ? "above" : "below"}`}
+            style={{
+              left: `${Math.min(80, Math.max(20, selected.x ?? 50))}%`,
+              top: `${selected.y}%`,
+            }}
+            onClick={(ev) => ev.stopPropagation()}
+          >
+            <div className="ep-bubble-player">
+              {nameOf(selected.playerId) || "Unknown player"}
+            </div>
+            <div className="ep-bubble-meta">
+              {selected.isGoal ? "⚽ " : ""}
+              {selected.label} · {selected.minute} · {codeOf(selected.teamId)}
+            </div>
+            <span className="ep-bubble-tail" />
+          </div>
+        )}
       </div>
 
       <div className="em-legend">
@@ -86,7 +114,7 @@ export function EventMap({
           <i style={{ background: AWAY_PINK }} /> {awayCode}
         </span>
         <span className="em-note">
-          ⚽ goal · ● shot · positions from the official event feed
+          tap a marker to see who took it · positions from the official feed
         </span>
       </div>
     </div>

@@ -521,7 +521,9 @@ function layout(
     lines = [def, mid, fwd].filter((n) => n > 0);
   }
 
-  // y runs 6 (goal line) → 48 (just before halfway) for each side.
+  // Each team occupies its own half: lines run from the goal line out to ~40,
+  // leaving a ~20% gap around the halfway line so the two front lines (and their
+  // name labels) don't overlap in the middle.
   const L = lines.length;
   if (gk) {
     gk.x = 50;
@@ -530,7 +532,7 @@ function layout(
   let idx = 0;
   lines.forEach((n, li) => {
     const t = L === 1 ? 0 : li / (L - 1);
-    const yOwn = 18 + t * 30; // 18..48 from goal toward halfway
+    const yOwn = 15 + t * 25; // 15..40 from goal toward halfway
     const y = top ? yOwn : 100 - yOwn;
     for (let k = 0; k < n; k++) {
       const p = outs[idx++];
