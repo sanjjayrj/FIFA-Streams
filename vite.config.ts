@@ -138,7 +138,11 @@ export default defineConfig({
     streamProxy(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["icon.svg", "apple-touch-icon.png", "favicon-32x32.png"],
+      includeAssets: [
+        "fwc26-emblem.png",
+        "apple-touch-icon.png",
+        "favicon-32x32.png",
+      ],
       manifest: {
         name: "FIFA Live — Stream & Teams",
         short_name: "FIFA Live",

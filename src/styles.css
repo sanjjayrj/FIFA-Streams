@@ -14,6 +14,18 @@
   --bar-bg: rgba(13, 20, 36, 0.7);
   --overlay-bg: rgba(5, 8, 16, 0.97);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  /* Official FIFA World Cup 2026 brand: trophy gold + tri-national host tones
+     (Canada red, Mexico green, USA blue). */
+  --gold: #c9a24b;
+  --can-red: #e4322b;
+  --mex-green: #15a85e;
+  --usa-blue: #2c6be0;
+  --tri: linear-gradient(
+    90deg,
+    var(--can-red),
+    var(--mex-green) 50%,
+    var(--usa-blue)
+  );
   /* Tell the browser this is a dark UI so native controls (select dropdowns,
      inputs, scrollbars, option lists) render light-on-dark instead of the
      default black-on-white that looked like "black text" in the panels. */
@@ -116,6 +128,16 @@ button {
   top: 0;
   z-index: 10;
 }
+/* Tri-national signature line across the very top. */
+.topbar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--tri);
+}
 
 .topbar-actions {
   display: flex;
@@ -165,23 +187,39 @@ button {
 
 .brand {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
 }
 
-.brand-ball {
-  font-size: 22px;
+.brand-emblem {
+  width: 42px;
+  height: 42px;
+  background: #fff;
+  border-radius: 11px;
+  padding: 4px;
+  object-fit: contain;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
 }
 
 .brand-name {
   font-weight: 800;
-  letter-spacing: 0.5px;
-  font-size: 18px;
+  letter-spacing: 0.3px;
+  font-size: 16px;
+}
+.brand-name b {
+  color: var(--gold);
 }
 
 .brand-sub {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 /* Layout */
@@ -2323,6 +2361,10 @@ kbd {
   font-weight: 800;
   letter-spacing: 0.5px;
   color: var(--muted);
+}
+/* The Final is the trophy — mark it gold. */
+.bracket-head:last-child {
+  color: var(--gold);
 }
 .bracket-canvas {
   position: relative;

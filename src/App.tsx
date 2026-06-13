@@ -166,9 +166,17 @@ export default function App() {
     <div className={`app ${showTeams ? "" : "no-teams"}`}>
       <header className="topbar">
         <div className="brand">
-          <span className="brand-ball">⚽</span>
-          <span className="brand-name">FIFA Live</span>
-          <span className="brand-sub">Stream &amp; Teams</span>
+          <img
+            className="brand-emblem"
+            src="/fwc26-emblem.png"
+            alt="FIFA World Cup 2026"
+          />
+          <div className="brand-text">
+            <span className="brand-name">
+              FIFA World Cup <b>2026</b>
+            </span>
+            <span className="brand-sub">Live streams &amp; official data</span>
+          </div>
         </div>
         <div className="topbar-actions">
           <button
