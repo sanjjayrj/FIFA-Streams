@@ -418,6 +418,21 @@ export interface BenchPlayer {
   position: number;
 }
 
+/** A roster entry for the full lineup list (starters + substitutes). */
+export interface LineupEntry {
+  id: string;
+  name: string;
+  shirt: number | null;
+  position: number;
+  captain: boolean;
+  goals: number;
+  yellow: boolean;
+  red: boolean;
+  offMinute: string | null; // subbed off at (for a starter)
+  onMinute: string | null; // subbed on at (for a substitute)
+  partnerName: string | null; // who replaced them / whom they replaced
+}
+
 export interface TeamLineup {
   teamId: string;
   name: string;
@@ -425,6 +440,8 @@ export interface TeamLineup {
   tactics: string | null;
   onPitch: LineupPlayer[];
   bench: BenchPlayer[];
+  starters: LineupEntry[];
+  subs: LineupEntry[];
 }
 
 export interface MatchEvent {
@@ -623,6 +640,38 @@ function buildLineup(t: RawLiveTeam | null): TeamLineup | null {
     position: p.Position,
   }));
 
+  // Substitution lookups for the full lineup list.
+  const offInfo = new Map<string, { minute: string; partner: string }>();
+  const onInfo = new Map<string, { minute: string; partner: string }>();
+  for (const s of subs) {
+    offInfo.set(s.IdPlayerOff, { minute: s.Minute, partner: loc(s.PlayerOnName) });
+    onInfo.set(s.IdPlayerOn, { minute: s.Minute, partner: loc(s.PlayerOffName) });
+  }
+  const entry = (p: RawLivePlayer): LineupEntry => {
+    const card = cardBy.get(p.IdPlayer) ?? { y: false, r: false };
+    const off = offInfo.get(p.IdPlayer);
+    const on = onInfo.get(p.IdPlayer);
+    return {
+      id: p.IdPlayer,
+      name: loc(p.ShortName) || loc(p.PlayerName),
+      shirt: p.ShirtNumber,
+      position: p.Position,
+      captain: p.Captain,
+      goals: goalsBy.get(p.IdPlayer) ?? 0,
+      yellow: card.y,
+      red: card.r,
+      offMinute: off?.minute ?? null,
+      onMinute: on?.minute ?? null,
+      partnerName: off?.partner ?? on?.partner ?? null,
+    };
+  };
+  const byPos = (a: LineupEntry, b: LineupEntry) =>
+    a.position - b.position || (a.shirt ?? 99) - (b.shirt ?? 99);
+  const startersList = starters.map(entry).sort(byPos);
+  const subsList = t.Players.filter((p) => p.Status !== 1)
+    .map(entry)
+    .sort((a, b) => Number(!!b.onMinute) - Number(!!a.onMinute) || byPos(a, b));
+
   return {
     teamId: t.IdTeam,
     name: loc(t.TeamName),
@@ -630,6 +679,8 @@ function buildLineup(t: RawLiveTeam | null): TeamLineup | null {
     tactics: t.Tactics,
     onPitch,
     bench,
+    starters: startersList,
+    subs: subsList,
   };
 }
 

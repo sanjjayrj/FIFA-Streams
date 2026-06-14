@@ -4,7 +4,7 @@ import { SourceBar, type Source } from "./components/SourceBar";
 import { DataPanel } from "./components/DataPanel";
 import { BracketOverlay } from "./components/BracketOverlay";
 import { ScoreTicker } from "./components/ScoreTicker";
-import { usePersistentState, useTheme } from "./hooks";
+import { useAsync, usePersistentState, useTheme } from "./hooks";
 import { extractEmbedUrl, extractTitle } from "./utils";
 import { fetchMatches, pickLatestMatch, type Match } from "./data/fifa";
 import { bestStreamFor } from "./data/streams";
@@ -41,6 +41,10 @@ export default function App() {
     true
   );
   const [showBracket, setShowBracket] = useState(false);
+  const [autoSwitch, setAutoSwitch] = usePersistentState<boolean>(
+    "fifa.autoSwitch",
+    true
+  );
   const [theme, toggleTheme] = useTheme();
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -109,6 +113,29 @@ export default function App() {
     },
     [loadStream]
   );
+
+  // Watch for a new match kicking off while the app is open and (optionally)
+  // auto-switch the player to it. FIFA games are sequential, so the newly-live
+  // match is "the next game".
+  const liveSeen = useRef<Set<string> | null>(null);
+  const matchPoll = useAsync<Match[]>(fetchMatches, [], 45_000);
+  useEffect(() => {
+    const ms = matchPoll.data;
+    if (!ms) return;
+    const liveIds = new Set(
+      ms.filter((m) => m.status === "live").map((m) => m.id)
+    );
+    if (liveSeen.current === null) {
+      liveSeen.current = liveIds; // baseline on first poll, don't switch
+      return;
+    }
+    const newly = [...liveIds].filter((id) => !liveSeen.current!.has(id));
+    liveSeen.current = liveIds;
+    if (autoSwitch && newly.length) {
+      const m = ms.find((x) => x.id === newly[0]);
+      if (m) watchMatch(m);
+    }
+  }, [matchPoll.data, autoSwitch, watchMatch]);
 
   // On startup, find the latest live/recent World Cup match and auto-load its
   // stream into the player, replacing the seed embed.
@@ -228,11 +255,13 @@ export default function App() {
             current={currentUrl}
             recents={recents}
             live={live}
+            autoSwitch={autoSwitch}
             error={error}
             onSubmit={onSubmit}
             onPick={loadSource}
             onRemove={removeRecent}
             onToggleLive={setLive}
+            onToggleAutoSwitch={setAutoSwitch}
           />
         </section>
         {showTeams && <DataPanel onLoadStream={loadStream} />}

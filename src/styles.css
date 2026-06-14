@@ -1759,6 +1759,115 @@ kbd {
   color: #ffd34d;
 }
 
+/* Slow / region-blocked load hint */
+.stage-slow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 420px;
+  text-align: center;
+  padding: 0 18px;
+}
+.stage-slow .muted {
+  line-height: 1.45;
+}
+
+/* Lineups (full starting XI + substitutes) */
+.lineups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.lu-col {
+  min-width: 0;
+}
+.lu-head {
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--accent-2);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.lu-sub-h {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin: 8px 0 2px;
+}
+.lu-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 2px;
+  font-size: 12px;
+}
+.lu-num {
+  width: 18px;
+  text-align: center;
+  font-weight: 800;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.lu-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lu-cap {
+  display: inline-block;
+  margin-left: 5px;
+  background: #ffd34d;
+  color: #000;
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+}
+.lu-badges {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.lu-goal {
+  font-size: 11px;
+  color: var(--accent);
+}
+.lu-card {
+  width: 7px;
+  height: 10px;
+  border-radius: 1px;
+}
+.lu-card.yellow {
+  background: #f4c430;
+}
+.lu-card.red {
+  background: var(--live);
+}
+.lu-off {
+  color: var(--live);
+  font-size: 10px;
+  font-weight: 700;
+}
+.lu-on {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+@media (max-width: 560px) {
+  .lineups {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Match stats (computed from events) */
 .stats-list {
   display: flex;

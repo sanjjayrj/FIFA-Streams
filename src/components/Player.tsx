@@ -88,6 +88,7 @@ export function Player({ url, title, live, onReload, reloadKey }: PlayerProps) {
     if (armTimer.current) clearTimeout(armTimer.current);
   }, []);
 
+  const [slowHint, setSlowHint] = useState(false);
   const kind = url ? classifySource(url) : null;
 
   // Reset transient state whenever the source or reload key changes.
@@ -95,6 +96,11 @@ export function Player({ url, title, live, onReload, reloadKey }: PlayerProps) {
     setLoading(true);
     setErr(null);
     setArmed(false);
+    setSlowHint(false);
+    if (!url) return;
+    // If the embed page hasn't loaded in time, it may be region/ISP-blocked.
+    const t = setTimeout(() => setSlowHint(true), 16000);
+    return () => clearTimeout(t);
   }, [url, reloadKey]);
 
   const handleLoaded = useCallback(() => setLoading(false), []);
@@ -154,7 +160,19 @@ export function Player({ url, title, live, onReload, reloadKey }: PlayerProps) {
             {loading && !err && (
               <div className="stage-loading">
                 <div className="spinner" />
-                <span>Loading stream…</span>
+                {slowHint ? (
+                  <div className="stage-slow">
+                    <span>Still loading…</span>
+                    <span className="muted">
+                      This stream may be blocked or slow on your network/region.
+                      Try <b>Reload</b>, pick another stream from the match’s
+                      “Watch” list, or paste a different source below. (Some
+                      providers are geo/ISP-blocked — a VPN on your end helps.)
+                    </span>
+                  </div>
+                ) : (
+                  <span>Loading stream…</span>
+                )}
               </div>
             )}
             {err && (

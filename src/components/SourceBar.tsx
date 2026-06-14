@@ -11,10 +11,12 @@ interface SourceBarProps {
   current: string | null;
   recents: Source[];
   live: boolean;
+  autoSwitch: boolean;
   onSubmit: (raw: string) => void;
   onPick: (s: Source) => void;
   onRemove: (url: string) => void;
   onToggleLive: (v: boolean) => void;
+  onToggleAutoSwitch: (v: boolean) => void;
   error: string | null;
 }
 
@@ -22,10 +24,12 @@ export function SourceBar({
   current,
   recents,
   live,
+  autoSwitch,
   onSubmit,
   onPick,
   onRemove,
   onToggleLive,
+  onToggleAutoSwitch,
   error,
 }: SourceBarProps) {
   const [draft, setDraft] = useState("");
@@ -59,6 +63,17 @@ export function SourceBar({
             onChange={(e) => onToggleLive(e.target.checked)}
           />
           Live
+        </label>
+        <label
+          className="live-toggle"
+          title="When a new match kicks off, automatically switch the player to it"
+        >
+          <input
+            type="checkbox"
+            checked={autoSwitch}
+            onChange={(e) => onToggleAutoSwitch(e.target.checked)}
+          />
+          Auto-switch
         </label>
       </div>
 

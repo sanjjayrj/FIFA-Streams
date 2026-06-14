@@ -13,6 +13,7 @@ import {
 } from "../data/fifa";
 import { EventMap } from "./EventMap";
 import { MatchStats } from "./MatchStats";
+import { Lineups } from "./Lineups";
 import {
   fetchLiveFootball,
   fetchStreamOptions,
@@ -286,6 +287,10 @@ export function MatchDetail({
               Lineups not announced yet — the field map appears once the starting
               XIs are confirmed (usually ~1 hour before kickoff).
             </div>
+          )}
+
+          {data.homeLineup && data.awayLineup && (
+            <Lineups home={data.homeLineup} away={data.awayLineup} />
           )}
 
           {(data.status === "live" || data.status === "finished") && (
