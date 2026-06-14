@@ -1,6 +1,18 @@
 import type { TeamStats } from "../data/fifa";
 
-function StatRow({ label, h, a }: { label: string; h: number; a: number }) {
+function StatRow({
+  label,
+  h,
+  a,
+  homeColor,
+  awayColor,
+}: {
+  label: string;
+  h: number;
+  a: number;
+  homeColor: string;
+  awayColor: string;
+}) {
   const total = h + a || 1;
   return (
     <div className="stat-row">
@@ -8,8 +20,14 @@ function StatRow({ label, h, a }: { label: string; h: number; a: number }) {
       <div className="stat-mid">
         <div className="stat-label">{label}</div>
         <div className="stat-track">
-          <div className="stat-fill home" style={{ width: `${(h / total) * 100}%` }} />
-          <div className="stat-fill away" style={{ width: `${(a / total) * 100}%` }} />
+          <div
+            className="stat-fill home"
+            style={{ width: `${(h / total) * 100}%`, background: homeColor }}
+          />
+          <div
+            className="stat-fill away"
+            style={{ width: `${(a / total) * 100}%`, background: awayColor }}
+          />
         </div>
       </div>
       <span className="stat-val">{a}</span>
@@ -20,9 +38,13 @@ function StatRow({ label, h, a }: { label: string; h: number; a: number }) {
 export function MatchStats({
   home,
   away,
+  homeColor,
+  awayColor,
 }: {
   home: TeamStats;
   away: TeamStats;
+  homeColor: string;
+  awayColor: string;
 }) {
   const rows = (
     [
@@ -45,7 +67,14 @@ export function MatchStats({
       <h3 className="mp-h3">Match stats</h3>
       <div className="stats-list">
         {rows.map(([label, h, a]) => (
-          <StatRow key={label} label={label} h={h} a={a} />
+          <StatRow
+            key={label}
+            label={label}
+            h={h}
+            a={a}
+            homeColor={homeColor}
+            awayColor={awayColor}
+          />
         ))}
       </div>
     </div>

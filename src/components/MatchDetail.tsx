@@ -13,7 +13,8 @@ import {
 } from "../data/fifa";
 import { EventMap } from "./EventMap";
 import { MatchStats } from "./MatchStats";
-import { Lineups } from "./Lineups";
+import { matchColors } from "../data/teamColors";
+import type { NationTeam } from "../data/fifa";
 import {
   fetchLiveFootball,
   fetchStreamOptions,
@@ -153,10 +154,12 @@ export function MatchDetail({
   match,
   onBack,
   onLoadStream,
+  onOpenTeam,
 }: {
   match: Match;
   onBack: () => void;
   onLoadStream: (url: string, title: string) => void;
+  onOpenTeam?: (team: NationTeam) => void;
 }) {
   const poll = match.status === "live" ? 30_000 : undefined;
   const { data, loading, error } = useAsync<Detail>(
@@ -193,6 +196,22 @@ export function MatchDetail({
   const autoFlip = data ? isSecondHalf(data) : false;
   const flip = flipOverride ?? autoFlip;
 
+  // Each team rendered in its kit colour (clash-resolved) across the visuals.
+  const kit = matchColors(match.home.code, match.away.code);
+
+  const teamName = (t: Match["home"]) =>
+    onOpenTeam && t.id && t.code ? (
+      <button
+        className="mp-team link"
+        onClick={() => onOpenTeam({ id: t.id!, name: t.name, code: t.code! })}
+        title={`View ${t.name} squad`}
+      >
+        {t.name || "TBD"}
+      </button>
+    ) : (
+      <span className="mp-team">{t.name || "TBD"}</span>
+    );
+
   // Full play-by-play (all event types) vs the key-events summary.
   const [fullTimeline, setFullTimeline] = useState(false);
   const codeOf = (teamId: string | null) =>
@@ -228,7 +247,7 @@ export function MatchDetail({
           {match.home.code && (
             <img className="mp-flag" src={flagUrl(match.home.code)!} alt="" />
           )}
-          <span className="mp-team">{match.home.name || "TBD"}</span>
+          {teamName(match.home)}
         </div>
         <div className="mp-score">
           {data && data.home.score != null && data.away.score != null ? (
@@ -244,7 +263,7 @@ export function MatchDetail({
           {match.away.code && (
             <img className="mp-flag" src={flagUrl(match.away.code)!} alt="" />
           )}
-          <span className="mp-team">{match.away.name || "TBD"}</span>
+          {teamName(match.away)}
         </div>
       </div>
 
@@ -280,6 +299,8 @@ export function MatchDetail({
                 away={data.awayLineup!}
                 squad={squadMap ?? null}
                 flip={flip}
+                homeColor={kit.home}
+                awayColor={kit.away}
               />
             </>
           ) : (
@@ -287,10 +308,6 @@ export function MatchDetail({
               Lineups not announced yet — the field map appears once the starting
               XIs are confirmed (usually ~1 hour before kickoff).
             </div>
-          )}
-
-          {data.homeLineup && data.awayLineup && (
-            <Lineups home={data.homeLineup} away={data.awayLineup} />
           )}
 
           {(data.status === "live" || data.status === "finished") && (
@@ -351,7 +368,14 @@ export function MatchDetail({
             </div>
           )}
 
-          {stats && <MatchStats home={stats.home} away={stats.away} />}
+          {stats && (
+            <MatchStats
+              home={stats.home}
+              away={stats.away}
+              homeColor={kit.home}
+              awayColor={kit.away}
+            />
+          )}
 
           {events && events.length > 0 && (
             <EventMap
@@ -359,6 +383,8 @@ export function MatchDetail({
               awayId={match.away.id}
               homeCode={match.home.code}
               awayCode={match.away.code}
+              homeColor={kit.home}
+              awayColor={kit.away}
               squad={squadMap ?? null}
             />
           )}

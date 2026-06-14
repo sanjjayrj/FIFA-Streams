@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { flagUrl, type Match } from "../data/fifa";
+import { teamColor } from "../data/teamColors";
 import { useFavourites } from "../hooks";
 
 function dayLabel(ms: number): string {
@@ -31,6 +32,9 @@ function TeamLine({
 }) {
   return (
     <div className={`fx-team ${bold ? "winner" : ""}`}>
+      {code && (
+        <span className="kit-dot" style={{ background: teamColor(code) }} />
+      )}
       {code ? (
         <img className="mini-flag" src={flagUrl(code)!} alt="" />
       ) : (

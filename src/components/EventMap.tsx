@@ -1,20 +1,21 @@
 import { useMemo, useState } from "react";
 import type { PitchEvent, SquadPlayer } from "../data/fifa";
 
-const GOAL_GREEN = "#16c172";
-const AWAY_PINK = "#ff5c7a";
-
 export function EventMap({
   events,
   awayId,
   homeCode,
   awayCode,
+  homeColor,
+  awayColor,
   squad,
 }: {
   events: PitchEvent[];
   awayId: string | null;
   homeCode: string | null;
   awayCode: string | null;
+  homeColor: string;
+  awayColor: string;
   squad: Map<string, SquadPlayer> | null;
 }) {
   const [shotsOnly, setShotsOnly] = useState(true);
@@ -32,7 +33,7 @@ export function EventMap({
   if (!located.length) return null;
 
   const colorOf = (teamId: string | null) =>
-    teamId && teamId === awayId ? AWAY_PINK : GOAL_GREEN;
+    teamId && teamId === awayId ? awayColor : homeColor;
   const nameOf = (id: string | null) =>
     (id && squad?.get(id)?.name) || "";
   const codeOf = (teamId: string | null) =>
@@ -108,10 +109,10 @@ export function EventMap({
 
       <div className="em-legend">
         <span>
-          <i style={{ background: GOAL_GREEN }} /> {homeCode}
+          <i style={{ background: homeColor }} /> {homeCode}
         </span>
         <span>
-          <i style={{ background: AWAY_PINK }} /> {awayCode}
+          <i style={{ background: awayColor }} /> {awayCode}
         </span>
         <span className="em-note">
           tap a marker to see who took it · positions from the official feed

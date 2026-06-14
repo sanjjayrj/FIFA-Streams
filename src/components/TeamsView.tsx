@@ -8,7 +8,13 @@ import {
 import { useAsync, useFavourites } from "../hooks";
 import { PlayerAvatar } from "./PlayerAvatar";
 
-function SquadDetail({ team, onBack }: { team: NationTeam; onBack: () => void }) {
+export function SquadDetail({
+  team,
+  onBack,
+}: {
+  team: NationTeam;
+  onBack: () => void;
+}) {
   const { data, loading, error } = useAsync<SquadPlayer[]>(
     () => fetchSquad(team.id),
     [team.id]

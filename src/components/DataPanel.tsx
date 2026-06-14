@@ -10,8 +10,9 @@ import {
 import { useAsync } from "../hooks";
 import { GroupsView } from "./GroupsView";
 import { FixturesView } from "./FixturesView";
-import { TeamsView } from "./TeamsView";
+import { TeamsView, SquadDetail } from "./TeamsView";
 import { MatchDetail } from "./MatchDetail";
+import type { NationTeam } from "../data/fifa";
 
 type Tab = "groups" | "fixtures" | "teams";
 
@@ -28,6 +29,7 @@ export function DataPanel({
 }) {
   const [tab, setTab] = useState<Tab>("fixtures");
   const [selected, setSelected] = useState<Match | null>(null);
+  const [openTeam, setOpenTeam] = useState<NationTeam | null>(null);
 
   const season = useAsync(fetchSeason, []);
   // Poll matches every 30s so live scores/statuses refresh on their own.
@@ -61,9 +63,12 @@ export function DataPanel({
         {TABS.map((t) => (
           <button
             key={t.id}
-            className={`tab ${tab === t.id && !selected ? "active" : ""}`}
+            className={`tab ${
+              tab === t.id && !selected && !openTeam ? "active" : ""
+            }`}
             onClick={() => {
               setSelected(null);
+              setOpenTeam(null);
               setTab(t.id);
             }}
           >
@@ -90,14 +95,18 @@ export function DataPanel({
             Loading tournament data…
           </div>
         )}
-        {!loading && !matchesState.error && selected && (
+        {!loading && !matchesState.error && openTeam && (
+          <SquadDetail team={openTeam} onBack={() => setOpenTeam(null)} />
+        )}
+        {!loading && !matchesState.error && !openTeam && selected && (
           <MatchDetail
             match={selected}
             onBack={() => setSelected(null)}
             onLoadStream={onLoadStream}
+            onOpenTeam={setOpenTeam}
           />
         )}
-        {!loading && !matchesState.error && !selected && (
+        {!loading && !matchesState.error && !openTeam && !selected && (
           <>
             {tab === "groups" && <GroupsView tables={tables} />}
             {tab === "fixtures" && (

@@ -988,6 +988,13 @@ kbd {
   gap: 8px;
   font-size: 14px;
 }
+.kit-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.4);
+}
 
 .fx-team.winner {
   font-weight: 800;
@@ -1396,6 +1403,24 @@ kbd {
   font-weight: 700;
   font-size: 14px;
 }
+button.mp-team.link {
+  background: none;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-align: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 3px;
+  transition: color 0.15s, text-decoration-color 0.15s;
+}
+button.mp-team.link:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
 
 .mp-score {
   display: flex;
@@ -1545,6 +1570,15 @@ kbd {
   color: rgba(255, 255, 255, 0.85);
   letter-spacing: 0.5px;
   z-index: 2;
+}
+.pl-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: middle;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55);
 }
 .pitch-team-label.top {
   top: 5px;
@@ -1904,13 +1938,13 @@ kbd {
 }
 .stat-fill {
   height: 100%;
+  /* keeps white/light kit colours visible on any panel background */
+  box-shadow: inset 0 0 0 1px rgba(128, 128, 128, 0.35);
 }
 .stat-fill.home {
-  background: var(--accent);
   border-radius: 3px 0 0 3px;
 }
 .stat-fill.away {
-  background: #ff5c7a;
   margin-left: auto;
   border-radius: 0 3px 3px 0;
 }
@@ -2085,6 +2119,7 @@ kbd {
   border-radius: 50%;
   margin-right: 4px;
   vertical-align: middle;
+  box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.4);
 }
 .em-note {
   color: var(--muted);

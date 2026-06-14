@@ -125,18 +125,22 @@ export function Pitch({
   away,
   squad,
   flip,
+  homeColor,
+  awayColor,
 }: {
   home: TeamLineup;
   away: TeamLineup;
   squad: Map<string, SquadPlayer> | null;
   flip: boolean;
+  homeColor: string;
+  awayColor: string;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const dispY = (p: LineupPlayer) => (flip ? 100 - p.y : p.y);
 
   const all = [
-    ...home.onPitch.map((p) => ({ p, color: "#16c172", code: home.code })),
-    ...away.onPitch.map((p) => ({ p, color: "#ff5c7a", code: away.code })),
+    ...home.onPitch.map((p) => ({ p, color: homeColor, code: home.code })),
+    ...away.onPitch.map((p) => ({ p, color: awayColor, code: away.code })),
   ];
   const sel = all.find((x) => x.p.id === selected) ?? null;
 
@@ -154,9 +158,11 @@ export function Pitch({
         <div className="pitch-spot pen bottom" />
 
         <div className={`pitch-team-label ${flip ? "bottom" : "top"}`}>
+          <span className="pl-swatch" style={{ background: awayColor }} />
           {away.code} · {away.tactics ?? ""}
         </div>
         <div className={`pitch-team-label ${flip ? "top" : "bottom"}`}>
+          <span className="pl-swatch" style={{ background: homeColor }} />
           {home.code} · {home.tactics ?? ""}
         </div>
 
