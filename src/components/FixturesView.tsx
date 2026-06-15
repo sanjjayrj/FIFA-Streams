@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { flagUrl, type Match } from "../data/fifa";
 import { teamColor } from "../data/teamColors";
 import { Star } from "lucide-react";
@@ -87,6 +87,29 @@ export function FixturesView({
     return groups;
   }, [filtered]);
 
+  // The match happening "now" (live, else the next upcoming) — to centre it.
+  const targetId = useMemo(() => {
+    const live = filtered.find((m) => m.status === "live");
+    if (live) return live.id;
+    const now = Date.now();
+    const next = [...filtered]
+      .sort((a, b) => a.kickoff - b.kickoff)
+      .find((m) => m.kickoff >= now);
+    return next?.id ?? null;
+  }, [filtered]);
+
+  // On open, scroll the current match into the centre of the list (once).
+  const cardRefs = useRef(new Map<string, HTMLButtonElement>());
+  const didScroll = useRef(false);
+  useEffect(() => {
+    if (didScroll.current || !targetId) return;
+    const el = cardRefs.current.get(targetId);
+    if (el) {
+      el.scrollIntoView({ block: "center" });
+      didScroll.current = true;
+    }
+  }, [targetId, byDay]);
+
   return (
     <div className="fixtures">
       <div className="fx-filter">
@@ -129,8 +152,13 @@ export function FixturesView({
           <div className="fx-day-label">{d.day}</div>
           {d.items.map((m) => (
             <button
-              className={`fx-card status-${m.status}`}
+              className={`fx-card status-${m.status} ${
+                m.id === targetId ? "is-now" : ""
+              }`}
               key={m.id}
+              ref={(el) => {
+                if (el) cardRefs.current.set(m.id, el);
+              }}
               onClick={() => onSelect(m)}
               title="View match detail & field map"
             >

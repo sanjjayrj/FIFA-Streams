@@ -31,7 +31,8 @@ export function VisitorCounter() {
   if (count == null) return null;
   return (
     <span className="visit-counter" title="Total visitors">
-      <Eye size={13} /> {count.toLocaleString()} visits
+      <Eye size={15} className="vc-eye" />
+      <span className="vc-num">{count.toLocaleString()}</span> visits
     </span>
   );
 }
