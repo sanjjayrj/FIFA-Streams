@@ -2727,14 +2727,38 @@ button.mp-team.link:hover {
   }
 }
 
-/* Tablet / narrow: stack the panel under the player, full width. */
+/* Tablet / narrow: stack the panel under the player. Lock the app to the
+   viewport and let the data panel scroll *inside itself*, so scrolling the
+   fixtures doesn't push the whole page (and the stream) away. */
 @media (max-width: 980px) {
+  .app {
+    height: 100dvh;
+    overflow: hidden;
+  }
   .layout {
-    grid-template-columns: minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    gap: 12px;
+    padding: 12px;
+    overflow: hidden;
+  }
+  .main-col {
+    flex-shrink: 0;
   }
   .data-panel {
     position: static;
     max-height: none;
+    flex: 1;
+    min-height: 0;
+  }
+  .data-body {
+    flex: 1;
+    min-height: 0;
+  }
+  .footer {
+    display: none;
   }
   .title-text {
     max-width: 50vw;
