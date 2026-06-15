@@ -15,6 +15,7 @@ import { EventMap } from "./EventMap";
 import { MatchStats } from "./MatchStats";
 import { matchColors } from "../data/teamColors";
 import type { NationTeam } from "../data/fifa";
+import { ArrowLeft, ArrowUpDown, Eye, Users } from "lucide-react";
 import {
   fetchLiveFootball,
   fetchStreamOptions,
@@ -140,8 +141,10 @@ function StreamsSection({
             >
               <span className="stream-lang">{o.language || "Stream"}</span>
               {o.hd && <span className="stream-hd">HD</span>}
-              <span className="stream-viewers">{o.viewers} 👁</span>
-              <span className="stream-go">Load ▸</span>
+              <span className="stream-viewers">
+                <Eye size={12} /> {o.viewers}
+              </span>
+              <span className="stream-go">Load</span>
             </button>
           ))}
         </div>
@@ -239,7 +242,7 @@ export function MatchDetail({
   return (
     <div className="match-detail">
       <button className="back-btn" onClick={onBack}>
-        ← Fixtures
+        <ArrowLeft size={14} /> Fixtures
       </button>
 
       <div className="mp-head">
@@ -272,7 +275,15 @@ export function MatchDetail({
         {data?.venue ? ` · ${data.venue}` : ""}
         {data?.city ? `, ${data.city}` : ""}
         {data?.referee ? ` · Ref: ${data.referee}` : ""}
-        {data?.attendance ? ` · ${Number(data.attendance).toLocaleString()} 👥` : ""}
+        {data?.attendance ? (
+          <>
+            {" · "}
+            <Users size={12} className="mp-meta-ico" />{" "}
+            {Number(data.attendance).toLocaleString()}
+          </>
+        ) : (
+          ""
+        )}
       </div>
 
       {loading && <div className="panel-empty">Loading match…</div>}
@@ -291,7 +302,7 @@ export function MatchDetail({
                   onClick={() => setFlipOverride(!flip)}
                   title="Teams switch ends at half-time — flip the pitch"
                 >
-                  ⇅ Switch ends
+                  <ArrowUpDown size={13} /> Switch ends
                 </button>
               </div>
               <Pitch

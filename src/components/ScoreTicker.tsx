@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Star } from "lucide-react";
 import { fetchMatches, flagUrl, type Match } from "../data/fifa";
 import { useAsync, useFavourites } from "../hooks";
 
@@ -69,7 +70,7 @@ export function ScoreTicker({
                   : `${m.home.name} vs ${m.away.name}`
               }
             >
-              {fav && <span className="tk-star">★</span>}
+              {fav && <Star size={11} className="tk-star fill-star" />}
               <Side code={m.home.code} score={m.home.score} />
               <span className="tk-meta">
                 {m.status === "live" ? m.minute || "LIVE" : timeLabel(m.kickoff)}

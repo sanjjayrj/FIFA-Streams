@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { X } from "lucide-react";
 import { fetchMatches, type Match } from "../data/fifa";
 import { useAsync } from "../hooks";
 import { BracketView } from "./BracketView";
@@ -32,7 +33,7 @@ export function BracketOverlay({
       <header className="bracket-overlay-bar">
         <span className="bracket-overlay-title">Tournament map</span>
         <button className="bracket-overlay-close" onClick={onClose}>
-          ✕ Close
+          <X size={15} /> Close
         </button>
       </header>
       <div className="bracket-overlay-body">

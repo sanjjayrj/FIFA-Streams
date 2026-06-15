@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
+import {
+  Maximize,
+  Minimize,
+  Play,
+  RotateCw,
+  ShieldCheck,
+  ShieldOff,
+  TriangleAlert,
+  Tv,
+} from "lucide-react";
 import { useFullscreen, usePersistentState } from "../hooks";
 import { classifySource, hostOf } from "../utils";
 
@@ -131,7 +141,8 @@ export function Player({ url, title, live, onReload, reloadKey }: PlayerProps) {
               onClick={() => setShield((v) => !v)}
               title="Pop-up shield: blocks the taps that make the embed open ad tabs. Turn off if you need to click the player's own controls."
             >
-              {shield ? "🛡 Shield on" : "🛡 Shield off"}
+              {shield ? <ShieldCheck size={15} /> : <ShieldOff size={15} />}
+              Shield {shield ? "on" : "off"}
             </button>
           )}
           <button
@@ -142,14 +153,15 @@ export function Player({ url, title, live, onReload, reloadKey }: PlayerProps) {
             }}
             title="Reload stream"
           >
-            ⟳ Reload
+            <RotateCw size={15} /> Reload
           </button>
           <button
             className="icon-btn primary"
             onClick={toggle}
             title="Toggle fullscreen"
           >
-            {isFullscreen ? "⤢ Exit" : "⤢ Fullscreen"}
+            {isFullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
+            {isFullscreen ? "Exit" : "Fullscreen"}
           </button>
         </div>
       </div>
@@ -177,7 +189,7 @@ export function Player({ url, title, live, onReload, reloadKey }: PlayerProps) {
             )}
             {err && (
               <div className="stage-empty">
-                <div className="stage-empty-ball">⚠️</div>
+                <TriangleAlert className="stage-empty-ico" size={40} />
                 <p>Couldn’t play this stream.</p>
                 <p className="muted">{err}</p>
               </div>
@@ -209,7 +221,7 @@ export function Player({ url, title, live, onReload, reloadKey }: PlayerProps) {
                   <div className={`click-shield ${armed ? "armed" : ""}`}>
                     {armed ? (
                       <div className="shield-pill armed">
-                        ▶ Interact now — re-locks shortly
+                        <Play size={13} /> Interact now — re-locks shortly
                       </div>
                     ) : (
                       <button
@@ -217,7 +229,7 @@ export function Player({ url, title, live, onReload, reloadKey }: PlayerProps) {
                         onClick={arm}
                         title="Let your clicks reach the player for a few seconds (an ad may open). Stray taps stay blocked."
                       >
-                        🛡 Shield on · tap to interact
+                        <ShieldCheck size={13} /> Shield on · tap to interact
                       </button>
                     )}
                   </div>
@@ -227,7 +239,7 @@ export function Player({ url, title, live, onReload, reloadKey }: PlayerProps) {
           </>
         ) : (
           <div className="stage-empty">
-            <div className="stage-empty-ball">⚽</div>
+            <Tv className="stage-empty-ico" size={40} />
             <p>No stream loaded.</p>
             <p className="muted">
               Paste an embed code, pick a stream from a fixture, or load a direct

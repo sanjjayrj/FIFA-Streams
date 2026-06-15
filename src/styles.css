@@ -109,6 +109,44 @@ button {
   outline: none;
 }
 
+/* Lucide icons */
+svg.lucide {
+  vertical-align: -0.14em;
+  flex-shrink: 0;
+}
+.fill-star {
+  fill: #ffd34d;
+  color: #ffd34d;
+}
+/* icon + text buttons */
+.icon-btn,
+.shield-pill,
+.back-btn,
+.flip-btn,
+.bracket-overlay-close,
+.visit-counter,
+.stream-viewers,
+.stream-go,
+.fx-live-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.star-btn {
+  color: var(--muted);
+}
+.star-btn.on {
+  color: #ffd34d;
+}
+.stage-empty-ico {
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.visit-counter {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .app {
   display: flex;
   flex-direction: column;
@@ -650,7 +688,11 @@ button {
   padding: 10px 20px 18px;
   color: var(--muted);
   font-size: 12px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 kbd {

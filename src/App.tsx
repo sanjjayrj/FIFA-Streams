@@ -4,6 +4,8 @@ import { SourceBar, type Source } from "./components/SourceBar";
 import { DataPanel } from "./components/DataPanel";
 import { BracketOverlay } from "./components/BracketOverlay";
 import { ScoreTicker } from "./components/ScoreTicker";
+import { VisitorCounter } from "./components/VisitorCounter";
+import { Moon, Sun } from "lucide-react";
 import { useAsync, usePersistentState, useTheme } from "./hooks";
 import { extractEmbedUrl, extractTitle } from "./utils";
 import { fetchMatches, pickLatestMatch, type Match } from "./data/fifa";
@@ -213,7 +215,9 @@ export default function App() {
             aria-label="Toggle theme"
           >
             <span className={`tt-track ${theme}`}>
-              <span className="tt-thumb">{theme === "dark" ? "☾" : "☀"}</span>
+              <span className="tt-thumb">
+                {theme === "dark" ? <Moon size={12} /> : <Sun size={12} />}
+              </span>
             </span>
           </button>
           <button
@@ -269,9 +273,10 @@ export default function App() {
 
       <footer className="footer">
         <span>
-          Shortcuts: <kbd>t</kbd> data panel · <kbd>r</kbd> reload · fullscreen
-          button on the player · live scores refresh every 30s
+          Shortcuts: <kbd>t</kbd> data panel · <kbd>r</kbd> reload · live scores
+          refresh every 30s
         </span>
+        <VisitorCounter />
       </footer>
     </div>
   );

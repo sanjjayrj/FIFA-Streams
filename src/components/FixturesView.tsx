@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { flagUrl, type Match } from "../data/fifa";
 import { teamColor } from "../data/teamColors";
+import { Star } from "lucide-react";
 import { useFavourites } from "../hooks";
 
 function dayLabel(ms: number): string {
@@ -115,7 +116,7 @@ export function FixturesView({
             checked={favOnly}
             onChange={(e) => setFavOnly(e.target.checked)}
           />
-          ★ Following
+          <Star size={12} className="fill-star" /> Following
         </label>
       </div>
 
@@ -144,7 +145,9 @@ export function FixturesView({
                   <span className="fx-time">⏱ {timeLabel(m.kickoff)}</span>
                 )}
                 <span className="fx-stage">
-                  {involvesFav(m) && <span className="fx-star">★</span>}
+                  {involvesFav(m) && (
+                    <Star size={11} className="fx-star fill-star" />
+                  )}
                   {m.group || m.stage} ›
                 </span>
               </div>

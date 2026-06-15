@@ -13,6 +13,7 @@ import { FixturesView } from "./FixturesView";
 import { TeamsView, SquadDetail } from "./TeamsView";
 import { MatchDetail } from "./MatchDetail";
 import type { NationTeam } from "../data/fifa";
+import { RotateCw } from "lucide-react";
 
 type Tab = "groups" | "fixtures" | "teams";
 
@@ -55,7 +56,7 @@ export function DataPanel({
           onClick={matchesState.refetch}
           title="Refresh"
         >
-          ⟳
+          <RotateCw size={15} />
         </button>
       </div>
 

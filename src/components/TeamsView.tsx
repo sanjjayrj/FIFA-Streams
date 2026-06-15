@@ -5,6 +5,7 @@ import {
   type NationTeam,
   type SquadPlayer,
 } from "../data/fifa";
+import { ArrowLeft, Star } from "lucide-react";
 import { useAsync, useFavourites } from "../hooks";
 import { PlayerAvatar } from "./PlayerAvatar";
 
@@ -38,7 +39,7 @@ export function SquadDetail({
   return (
     <div className="squad">
       <button className="back-btn" onClick={onBack}>
-        ← All teams
+        <ArrowLeft size={14} /> All teams
       </button>
       <div className="squad-head">
         <img className="squad-flag" src={flagUrl(team.code)!} alt="" />
@@ -112,11 +113,11 @@ export function TeamsView({ teams }: { teams: NationTeam[] }) {
         {filtered.map((t) => (
           <div className="team-row tappable" key={t.id}>
             <button
-              className="star-btn"
+              className={`star-btn ${fav.has(t.code) ? "on" : ""}`}
               onClick={() => fav.toggle(t.code)}
               title={fav.has(t.code) ? "Unfollow" : "Follow team"}
             >
-              {fav.has(t.code) ? "★" : "☆"}
+              <Star size={15} className={fav.has(t.code) ? "fill-star" : ""} />
             </button>
             <button className="team-open" onClick={() => setSelected(t)}>
               <img className="mini-flag" src={flagUrl(t.code)!} alt="" />
