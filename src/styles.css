@@ -144,21 +144,19 @@ svg.lucide {
 }
 .visit-counter {
   color: var(--muted);
-  font-size: 13px;
-  gap: 7px;
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 6px 14px;
+  font-size: 12px;
+  gap: 6px;
+  letter-spacing: 0.2px;
 }
 .visit-counter .vc-eye {
-  color: var(--gold);
+  color: var(--muted);
+  opacity: 0.7;
 }
 .visit-counter .vc-num {
-  color: var(--gold);
-  font-weight: 800;
-  font-size: 16px;
-  letter-spacing: 0.2px;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
 }
 
 .app {
