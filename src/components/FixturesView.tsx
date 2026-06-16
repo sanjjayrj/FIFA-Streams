@@ -98,11 +98,18 @@ export function FixturesView({
     return next?.id ?? null;
   }, [filtered]);
 
-  // On open, scroll the current match into the centre of the list (once).
+  // On open, scroll the current match into the centre of the list (once) — but
+  // ONLY in the side-by-side layout, where the stream is pinned. When the panel
+  // is stacked under the stream (mobile, or a narrowed window), scrolling the
+  // page would drag the stream out of view, so we leave the page at the top.
   const cardRefs = useRef(new Map<string, HTMLButtonElement>());
   const didScroll = useRef(false);
   useEffect(() => {
     if (didScroll.current || !targetId) return;
+    if (!window.matchMedia("(min-width: 981px)").matches) {
+      didScroll.current = true; // stacked layout: never auto-scroll
+      return;
+    }
     const el = cardRefs.current.get(targetId);
     if (el) {
       el.scrollIntoView({ block: "center" });
