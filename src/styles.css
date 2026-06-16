@@ -2727,38 +2727,23 @@ button.mp-team.link:hover {
   }
 }
 
-/* Tablet / narrow: stack the panel under the player. Lock the app to the
-   viewport and let the data panel scroll *inside itself*, so scrolling the
-   fixtures doesn't push the whole page (and the stream) away. */
+/* Tablet / narrow: stack the panel under the player. The page scrolls normally
+   (so scrolling always works); the stream is made sticky so it stays visible
+   while you scroll the data below it — sticky never blocks page scrolling. */
 @media (max-width: 980px) {
-  .app {
-    height: 100dvh;
-    overflow: hidden;
-  }
   .layout {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 0;
-    gap: 12px;
-    padding: 12px;
-    overflow: hidden;
+    grid-template-columns: minmax(0, 1fr);
   }
   .main-col {
-    flex-shrink: 0;
+    position: sticky;
+    top: 96px; /* below the sticky topbar + score ticker */
+    align-self: start;
+    z-index: 5;
+    background: var(--bg);
   }
   .data-panel {
     position: static;
     max-height: none;
-    flex: 1;
-    min-height: 0;
-  }
-  .data-body {
-    flex: 1;
-    min-height: 0;
-  }
-  .footer {
-    display: none;
   }
   .title-text {
     max-width: 50vw;
