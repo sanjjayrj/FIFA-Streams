@@ -81,11 +81,17 @@ The right-hand panel pulls **live, official data from the FIFA Data API**
 sends `Access-Control-Allow-Origin: *`, so the browser calls it directly — no
 proxy, no API key. Match data auto-refreshes every 30 seconds.
 
+- **Now** (default tab) — a hub that surfaces what's relevant right now: **live
+  matches** (with a Watch button), an **Up next** hero with a ticking
+  countdown to kickoff, **your followed teams'** next games, and **today's**
+  schedule. Lives in `src/components/NowHub.tsx`.
 - **Groups** — all 12 group tables (A–L), with standings computed live from the
   official match feed: Played / W / D / L / GD / Pts, top two highlighted.
 - **Fixtures** — every match with live/finished/upcoming status, the live
   minute, scores, venue, and a stage filter (group stage → final). A badge shows
-  how many matches are live right now.
+  how many matches are live right now. Upcoming matches show a **live countdown**
+  to kickoff, and the side-by-side desktop layout auto-scrolls to the current
+  match.
 - **Teams** — all 48 qualified nations; tap one to load its full 26-player squad
   with photos, shirt numbers, positions, ages, and goals/cards.
 - **Match detail + live field map** — click any fixture to open its detail page:
@@ -102,6 +108,17 @@ proxy, no API key. Match data auto-refreshes every 30 seconds.
 
 All of this lives in `src/data/fifa.ts`. To point at a different competition or
 season, change the `COMPETITION` / `SEASON` constants there.
+
+### Goal & kickoff alerts (followed teams)
+
+Follow teams (the ☆ in the **Teams** tab). While the app is open, the match feed
+is polled every 30 s; when a followed team **scores** or its match **kicks off**,
+a toast pops up. If you grant permission (an **Enable goal alerts** prompt in the
+Now hub), it also fires a native browser notification so alerts surface when the
+tab is in the background. Alerts only fire for teams you follow. Implemented in
+`src/lib/toast.ts` + `src/components/Toaster.tsx`, driven by the poller in
+`src/App.tsx`. Countdowns use `useNow` (`src/hooks.ts`) +
+`formatCountdown`/`formatClock` (`src/utils.ts`).
 
 ### Stream discovery (auto-find streams per match)
 

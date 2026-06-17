@@ -43,6 +43,32 @@ export function hostOf(url: string): string {
   }
 }
 
+/** Compact time-until string, e.g. "2d 4h", "3h 12m", "8m 5s", "42s". */
+export function formatCountdown(ms: number): string {
+  if (ms <= 0) return "now";
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+
+/** Ticking clock, e.g. "4:23:11" (or "2d 4:23:11" past a day). For the hero. */
+export function formatClock(ms: number): string {
+  if (ms <= 0) return "0:00:00";
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const hms = `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  return d > 0 ? `${d}d ${hms}` : hms;
+}
+
 /**
  * Decide how to play a source. Direct HLS playlists (or anything routed through
  * the local stream proxy) play natively in a <video>; everything else is an

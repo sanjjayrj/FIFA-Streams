@@ -16,6 +16,7 @@ import { MatchStats } from "./MatchStats";
 import { matchColors } from "../data/teamColors";
 import type { NationTeam } from "../data/fifa";
 import { ArrowLeft, ArrowUpDown, Eye, Users } from "lucide-react";
+import { Countdown } from "./Countdown";
 import {
   fetchLiveFootball,
   fetchStreamOptions,
@@ -71,7 +72,14 @@ function StatusPill({ d }: { d: Detail }) {
     );
   if (d.status === "finished")
     return <span className="mp-status ft">Full time</span>;
-  return <span className="mp-status up">{dateTime(d.iso)}</span>;
+  return (
+    <span className="mp-status up">
+      <span className="mp-kickin">
+        in <Countdown to={new Date(d.iso).getTime()} />
+      </span>
+      {dateTime(d.iso)}
+    </span>
+  );
 }
 
 function StreamsSection({

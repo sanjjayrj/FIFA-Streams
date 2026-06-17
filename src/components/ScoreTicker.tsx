@@ -1,15 +1,8 @@
 import { useMemo } from "react";
 import { Star } from "lucide-react";
 import { fetchMatches, flagUrl, type Match } from "../data/fifa";
-import { useAsync, useFavourites } from "../hooks";
-
-function timeLabel(ms: number): string {
-  return new Date(ms).toLocaleString(undefined, {
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { useAsync, useFavourites, useNow } from "../hooks";
+import { formatCountdown } from "../utils";
 
 function Side({ code, score }: { code: string | null; score: number | null }) {
   return (
@@ -28,6 +21,7 @@ export function ScoreTicker({
 }) {
   const { data } = useAsync<Match[]>(fetchMatches, [], 30_000);
   const { has } = useFavourites();
+  const now = useNow(30_000);
 
   const items = useMemo(() => {
     const all = data ?? [];
@@ -73,7 +67,9 @@ export function ScoreTicker({
               {fav && <Star size={11} className="tk-star fill-star" />}
               <Side code={m.home.code} score={m.home.score} />
               <span className="tk-meta">
-                {m.status === "live" ? m.minute || "LIVE" : timeLabel(m.kickoff)}
+                {m.status === "live"
+                  ? m.minute || "LIVE"
+                  : `in ${formatCountdown(m.kickoff - now)}`}
               </span>
               <Side code={m.away.code} score={m.away.score} />
             </button>

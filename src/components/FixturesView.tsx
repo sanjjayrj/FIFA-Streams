@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { flagUrl, type Match } from "../data/fifa";
 import { teamColor } from "../data/teamColors";
 import { Star } from "lucide-react";
-import { useFavourites } from "../hooks";
+import { useFavourites, useNow } from "../hooks";
+import { formatCountdown } from "../utils";
 
 function dayLabel(ms: number): string {
   return new Date(ms).toLocaleDateString(undefined, {
@@ -60,6 +61,7 @@ export function FixturesView({
   const [liveOnly, setLiveOnly] = useState(false);
   const [favOnly, setFavOnly] = useState(false);
   const fav = useFavourites();
+  const now = useNow(30_000);
   const involvesFav = (m: Match) =>
     (m.home.code != null && fav.has(m.home.code)) ||
     (m.away.code != null && fav.has(m.away.code));
@@ -177,7 +179,9 @@ export function FixturesView({
                 ) : m.status === "finished" ? (
                   <span className="fx-ft">FT · {timeLabel(m.kickoff)}</span>
                 ) : (
-                  <span className="fx-time">⏱ {timeLabel(m.kickoff)}</span>
+                  <span className="fx-time">
+                    {timeLabel(m.kickoff)} · in {formatCountdown(m.kickoff - now)}
+                  </span>
                 )}
                 <span className="fx-stage">
                   {involvesFav(m) && (

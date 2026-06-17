@@ -12,23 +12,27 @@ import { GroupsView } from "./GroupsView";
 import { FixturesView } from "./FixturesView";
 import { TeamsView, SquadDetail } from "./TeamsView";
 import { MatchDetail } from "./MatchDetail";
+import { NowHub } from "./NowHub";
 import type { NationTeam } from "../data/fifa";
 import { RotateCw } from "lucide-react";
 
-type Tab = "groups" | "fixtures" | "teams";
+type Tab = "now" | "groups" | "fixtures" | "teams";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "groups", label: "Groups" },
+  { id: "now", label: "Now" },
   { id: "fixtures", label: "Fixtures" },
+  { id: "groups", label: "Groups" },
   { id: "teams", label: "Teams" },
 ];
 
 export function DataPanel({
   onLoadStream,
+  onWatchMatch,
 }: {
   onLoadStream: (url: string, title: string) => void;
+  onWatchMatch: (m: Match) => void;
 }) {
-  const [tab, setTab] = useState<Tab>("fixtures");
+  const [tab, setTab] = useState<Tab>("now");
   const [selected, setSelected] = useState<Match | null>(null);
   const [openTeam, setOpenTeam] = useState<NationTeam | null>(null);
 
@@ -109,6 +113,13 @@ export function DataPanel({
         )}
         {!loading && !matchesState.error && !openTeam && !selected && (
           <>
+            {tab === "now" && (
+              <NowHub
+                matches={matches}
+                onSelect={setSelected}
+                onWatch={onWatchMatch}
+              />
+            )}
             {tab === "groups" && <GroupsView tables={tables} />}
             {tab === "fixtures" && (
               <FixturesView

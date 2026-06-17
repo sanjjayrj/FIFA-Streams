@@ -5,11 +5,23 @@ import { DataPanel } from "./components/DataPanel";
 import { BracketOverlay } from "./components/BracketOverlay";
 import { ScoreTicker } from "./components/ScoreTicker";
 import { VisitorCounter } from "./components/VisitorCounter";
+import { Toaster } from "./components/Toaster";
 import { Moon, Sun } from "lucide-react";
-import { useAsync, usePersistentState, useTheme } from "./hooks";
+import {
+  useAsync,
+  useFavourites,
+  usePersistentState,
+  useTheme,
+} from "./hooks";
 import { extractEmbedUrl, extractTitle } from "./utils";
-import { fetchMatches, pickLatestMatch, type Match } from "./data/fifa";
+import {
+  fetchMatches,
+  pickLatestMatch,
+  type Match,
+  type MatchStatus,
+} from "./data/fifa";
 import { bestStreamFor } from "./data/streams";
+import { pushToast } from "./lib/toast";
 
 // The embed the user started with, pre-loaded on first run.
 const DEFAULT_EMBED = `<iframe title="FIFA World Cup Opening Ceremony: Mexico Player" src="https://embed.st/embed/admin/ppv-fifa-world-cup-opening-ceremony-mexico/1" allowfullscreen="yes" allow="encrypted-media; picture-in-picture;" width="100%" height="100%" frameborder="0"></iframe>`;
@@ -25,6 +37,7 @@ function makeSource(raw: string): Source | null {
 }
 
 export default function App() {
+  const { has: hasFav, codes: favCodes } = useFavourites();
   const [recents, setRecents] = usePersistentState<Source[]>(
     "fifa.recents",
     INITIAL_RECENTS
@@ -116,28 +129,54 @@ export default function App() {
     [loadStream]
   );
 
-  // Watch for a new match kicking off while the app is open and (optionally)
-  // auto-switch the player to it. FIFA games are sequential, so the newly-live
-  // match is "the next game".
-  const liveSeen = useRef<Set<string> | null>(null);
-  const matchPoll = useAsync<Match[]>(fetchMatches, [], 45_000);
+  // Poll the match feed to (a) auto-switch to a newly-live match and (b) fire
+  // goal / kickoff alerts for followed teams. Compares each poll to the previous
+  // snapshot of scores + statuses.
+  const prevSnap = useRef<
+    Map<string, { hs: number | null; as: number | null; status: MatchStatus }> | null
+  >(null);
+  const matchPoll = useAsync<Match[]>(fetchMatches, [], 30_000);
   useEffect(() => {
     const ms = matchPoll.data;
     if (!ms) return;
-    const liveIds = new Set(
-      ms.filter((m) => m.status === "live").map((m) => m.id)
+    const snap = new Map(
+      ms.map((m) => [
+        m.id,
+        { hs: m.home.score, as: m.away.score, status: m.status },
+      ])
     );
-    if (liveSeen.current === null) {
-      liveSeen.current = liveIds; // baseline on first poll, don't switch
-      return;
+    const prev = prevSnap.current;
+    prevSnap.current = snap;
+    if (!prev) return; // baseline on first poll — no alerts/switch
+
+    const newlyLive = ms.filter((m) => {
+      const p = prev.get(m.id);
+      return m.status === "live" && p && p.status !== "live";
+    });
+    if (autoSwitch && newlyLive.length) watchMatch(newlyLive[0]);
+
+    for (const m of ms) {
+      const p = prev.get(m.id);
+      if (!p) continue;
+      const followed =
+        (m.home.code && hasFav(m.home.code)) ||
+        (m.away.code && hasFav(m.away.code));
+      if (!followed) continue;
+      if (p.status !== "live" && m.status === "live") {
+        pushToast({
+          tone: "live",
+          title: `Kickoff: ${m.home.name} vs ${m.away.name}`,
+        });
+      }
+      const score = `${m.home.name} ${m.home.score ?? 0}–${
+        m.away.score ?? 0
+      } ${m.away.name}`;
+      if ((m.home.score ?? 0) > (p.hs ?? 0))
+        pushToast({ tone: "goal", title: `⚽ Goal — ${m.home.name}`, body: score });
+      if ((m.away.score ?? 0) > (p.as ?? 0))
+        pushToast({ tone: "goal", title: `⚽ Goal — ${m.away.name}`, body: score });
     }
-    const newly = [...liveIds].filter((id) => !liveSeen.current!.has(id));
-    liveSeen.current = liveIds;
-    if (autoSwitch && newly.length) {
-      const m = ms.find((x) => x.id === newly[0]);
-      if (m) watchMatch(m);
-    }
-  }, [matchPoll.data, autoSwitch, watchMatch]);
+  }, [matchPoll.data, autoSwitch, watchMatch, hasFav, favCodes]);
 
   // On startup, find the latest live/recent World Cup match and auto-load its
   // stream into the player, replacing the seed embed.
@@ -268,8 +307,12 @@ export default function App() {
             onToggleAutoSwitch={setAutoSwitch}
           />
         </section>
-        {showTeams && <DataPanel onLoadStream={loadStream} />}
+        {showTeams && (
+          <DataPanel onLoadStream={loadStream} onWatchMatch={watchMatch} />
+        )}
       </main>
+
+      <Toaster />
 
       <footer className="footer">
         <span>
