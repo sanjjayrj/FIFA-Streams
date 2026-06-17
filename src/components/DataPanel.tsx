@@ -14,15 +14,17 @@ import { TeamsView } from "./TeamsView";
 import { TeamPage } from "./TeamPage";
 import { MatchDetail } from "./MatchDetail";
 import { NowHub } from "./NowHub";
+import { ScorersView } from "./ScorersView";
 import type { NationTeam } from "../data/fifa";
 import { RotateCw } from "lucide-react";
 
-type Tab = "now" | "groups" | "fixtures" | "teams";
+type Tab = "now" | "groups" | "fixtures" | "teams" | "scorers";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "now", label: "Now" },
   { id: "fixtures", label: "Fixtures" },
   { id: "groups", label: "Groups" },
+  { id: "scorers", label: "Scorers" },
   { id: "teams", label: "Teams" },
 ];
 
@@ -130,6 +132,7 @@ export function DataPanel({
               />
             )}
             {tab === "groups" && <GroupsView tables={tables} />}
+            {tab === "scorers" && <ScorersView />}
             {tab === "fixtures" && (
               <FixturesView
                 matches={matches}

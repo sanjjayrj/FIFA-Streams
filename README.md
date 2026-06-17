@@ -92,12 +92,19 @@ proxy, no API key. Match data auto-refreshes every 30 seconds.
   how many matches are live right now. Upcoming matches show a **live countdown**
   to kickoff, and the side-by-side desktop layout auto-scrolls to the current
   match.
+- **Scorers** — a **Golden Boot** leaderboard ranked by goals. FIFA has no
+  top-scorers endpoint, so it's aggregated from the per-match live feeds across
+  every played match (own goals excluded by checking the scorer is on the
+  scoring team). Finished matches are cached in `localStorage`, so only live
+  matches refetch. Goals only — the feed doesn't populate assists. Code in
+  `fetchScorers` (`src/data/fifa.ts`) + `ScorersView.tsx`.
 - **Teams** — all 48 qualified nations; tap one for a full **team page**
   (`TeamPage.tsx`): its **group standing** (their group table, highlighted),
   recent **form**, **head coach** (from the squad feed's `Officials`, Role 0),
   **fixtures & results** (tap any to open the match), and the full **26-player
-  squad** with photos, positions, ages, and goals/cards. (Verified to have
-  complete data — squad + coach — for all 48 teams.)
+  squad** with photos, positions, ages, and each player's **tournament goals &
+  cards** (tallied from the team's matches). (Verified to have complete data —
+  squad + coach — for all 48 teams.)
 - **Match detail + live field map** — click any fixture to open its detail page:
   full date/time, venue, referee, attendance, a **scrollable timeline** of
   goals/cards/subs, and an **SVG pitch showing both teams' formations** with the

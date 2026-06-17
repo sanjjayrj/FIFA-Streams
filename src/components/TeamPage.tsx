@@ -3,10 +3,12 @@ import { ArrowLeft } from "lucide-react";
 import {
   computeGroupTables,
   fetchTeam,
+  fetchTeamTallies,
   flagUrl,
   type Coach,
   type Match,
   type NationTeam,
+  type PlayerTally,
   type SquadPlayer,
 } from "../data/fifa";
 import { teamColor } from "../data/teamColors";
@@ -145,7 +147,13 @@ function CoachLine({ coach }: { coach: Coach }) {
   );
 }
 
-function Squad({ players }: { players: SquadPlayer[] }) {
+function Squad({
+  players,
+  tallies,
+}: {
+  players: SquadPlayer[];
+  tallies: Map<string, PlayerTally> | null;
+}) {
   const groups = useMemo(() => {
     const labels = ["Goalkeepers", "Defenders", "Midfielders", "Forwards"];
     const buckets: { label: string; players: SquadPlayer[] }[] = [];
@@ -167,25 +175,32 @@ function Squad({ players }: { players: SquadPlayer[] }) {
       {groups.map((b) => (
         <div className="squad-group" key={b.label}>
           <div className="squad-group-label">{b.label}</div>
-          {b.players.map((p) => (
-            <div className="player-row" key={p.id}>
-              <span className="player-num">{p.jersey ?? "–"}</span>
-              <PlayerAvatar src={p.photo} className="player-photo" />
-              <div className="player-info">
-                <span className="player-name">{p.name}</span>
-                <span className="player-meta">
-                  {p.position}
-                  {p.age != null ? ` · ${p.age}y` : ""}
-                  {p.heightCm ? ` · ${p.heightCm}cm` : ""}
-                </span>
+          {b.players.map((p) => {
+            const t = tallies?.get(p.id);
+            return (
+              <div className="player-row" key={p.id}>
+                <span className="player-num">{p.jersey ?? "–"}</span>
+                <PlayerAvatar src={p.photo} className="player-photo" />
+                <div className="player-info">
+                  <span className="player-name">{p.name}</span>
+                  <span className="player-meta">
+                    {p.position}
+                    {p.age != null ? ` · ${p.age}y` : ""}
+                    {p.heightCm ? ` · ${p.heightCm}cm` : ""}
+                  </span>
+                </div>
+                <div className="player-stats">
+                  {t && t.goals > 0 && (
+                    <span className="stat-goal">⚽{t.goals}</span>
+                  )}
+                  {t && t.yellow > 0 && (
+                    <span className="stat-yc">{t.yellow}</span>
+                  )}
+                  {t && t.red > 0 && <span className="stat-rc">{t.red}</span>}
+                </div>
               </div>
-              <div className="player-stats">
-                {p.goals ? <span className="stat-goal">⚽{p.goals}</span> : null}
-                {p.yellow ? <span className="stat-yc">{p.yellow}</span> : null}
-                {p.red ? <span className="stat-rc">{p.red}</span> : null}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ))}
     </div>
@@ -212,6 +227,15 @@ export function TeamPage({
         .filter((m) => m.home.id === team.id || m.away.id === team.id)
         .sort((a, b) => a.kickoff - b.kickoff),
     [matches, team.id]
+  );
+
+  // Tournament goals/cards for this team's players, from their own matches.
+  const playedCount = teamMatches.filter(
+    (m) => m.status === "finished" || m.status === "live"
+  ).length;
+  const { data: tallies } = useAsync(
+    () => fetchTeamTallies(teamMatches),
+    [team.id, playedCount]
   );
 
   const form = useMemo(() => {
@@ -274,7 +298,7 @@ export function TeamPage({
 
       {loading && <div className="panel-empty">Loading squad…</div>}
       {error && <div className="panel-error">Couldn’t load squad: {error}</div>}
-      {data && <Squad players={data.players} />}
+      {data && <Squad players={data.players} tallies={tallies ?? null} />}
     </div>
   );
 }

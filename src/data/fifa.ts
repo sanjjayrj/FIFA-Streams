@@ -312,6 +312,121 @@ export async function fetchSquad(idTeam: string): Promise<SquadPlayer[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Player tournament tallies (goals / assists / cards) — aggregated from the
+// per-match live feeds, since FIFA has no top-scorers endpoint.
+// ---------------------------------------------------------------------------
+
+export interface PlayerTally {
+  id: string;
+  name: string;
+  code: string; // team
+  goals: number;
+  assists: number;
+  yellow: number;
+  red: number;
+}
+
+function tallyTeam(t: RawLiveTeam | null, out: Map<string, PlayerTally>): void {
+  if (!t) return;
+  const ids = new Set(t.Players.map((p) => p.IdPlayer));
+  const nameOf = (id: string) => {
+    const p = t.Players.find((x) => x.IdPlayer === id);
+    return p ? loc(p.ShortName) || loc(p.PlayerName) : "";
+  };
+  const code = t.Abbreviation || t.IdCountry || "";
+  // Only credit a player who is actually on this team — this excludes own goals
+  // (which appear in the *scoring* team's list with an opponent's id).
+  const bump = (id: string | null, field: "goals" | "assists" | "yellow" | "red") => {
+    if (!id || !ids.has(id)) return;
+    let e = out.get(id);
+    if (!e)
+      out.set(
+        id,
+        (e = { id, name: nameOf(id), code, goals: 0, assists: 0, yellow: 0, red: 0 })
+      );
+    e[field]++;
+  };
+  for (const g of t.Goals ?? []) {
+    bump(g.IdPlayer, "goals");
+    bump(g.IdAssistPlayer, "assists");
+  }
+  for (const b of t.Bookings ?? [])
+    bump(b.IdPlayer, b.Card === 1 ? "yellow" : "red");
+}
+
+const isPlayed = (m: Match) => m.status === "finished" || m.status === "live";
+
+/** Per-player tallies for one match; finished matches are cached in localStorage. */
+async function matchTallies(m: Match): Promise<PlayerTally[]> {
+  const key = `fifa.tally.${m.id}`;
+  if (m.status === "finished") {
+    try {
+      const c = localStorage.getItem(key);
+      if (c) return JSON.parse(c) as PlayerTally[];
+    } catch {
+      /* ignore */
+    }
+  }
+  const d = await getJson<RawLive>(
+    `/live/football/${COMPETITION}/${SEASON}/${m.idStage}/${m.id}?language=${LANG}`
+  );
+  const out = new Map<string, PlayerTally>();
+  tallyTeam(d.HomeTeam, out);
+  tallyTeam(d.AwayTeam, out);
+  const list = [...out.values()];
+  if (m.status === "finished") {
+    try {
+      localStorage.setItem(key, JSON.stringify(list));
+    } catch {
+      /* ignore */
+    }
+  }
+  return list;
+}
+
+/** Merge per-match tallies across the given matches (batched fetches). */
+async function aggregate(matches: Match[]): Promise<Map<string, PlayerTally>> {
+  const played = matches.filter(isPlayed);
+  const merged = new Map<string, PlayerTally>();
+  const BATCH = 10;
+  for (let i = 0; i < played.length; i += BATCH) {
+    const lists = await Promise.all(
+      played.slice(i, i + BATCH).map((m) => matchTallies(m).catch(() => []))
+    );
+    for (const list of lists)
+      for (const t of list) {
+        const e = merged.get(t.id);
+        if (!e) merged.set(t.id, { ...t });
+        else {
+          e.goals += t.goals;
+          e.assists += t.assists;
+          e.yellow += t.yellow;
+          e.red += t.red;
+        }
+      }
+  }
+  return merged;
+}
+
+/** Tournament-wide tallies, sorted as a Golden Boot table (goals, then assists). */
+export async function fetchScorers(): Promise<PlayerTally[]> {
+  const merged = await aggregate(await fetchMatches());
+  return [...merged.values()].sort(
+    (a, b) =>
+      b.goals - a.goals ||
+      b.assists - a.assists ||
+      a.name.localeCompare(b.name)
+  );
+}
+
+/** Tallies keyed by player id for a single team's matches (cheap — ~3 fetches). */
+export async function fetchTeamTallies(
+  teamMatches: Match[]
+): Promise<Map<string, PlayerTally>> {
+  return aggregate(teamMatches);
+}
+
+// ---------------------------------------------------------------------------
 // Derivations
 // ---------------------------------------------------------------------------
 
@@ -504,6 +619,7 @@ interface RawLivePlayer {
 }
 interface RawGoal {
   IdPlayer: string;
+  IdAssistPlayer: string | null;
   Minute: string;
   Type: number;
 }

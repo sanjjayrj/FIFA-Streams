@@ -3202,3 +3202,66 @@ button.mp-team.link:hover {
   background: var(--live);
   color: #fff;
 }
+
+/* ───────────────────────── Scorers (Golden Boot) ───────────────────────── */
+.scorers {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.scorers-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.scorers-head > span:first-child {
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--gold);
+}
+.scorers-sub {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.sc-row {
+  display: grid;
+  grid-template-columns: 24px 30px auto 1fr auto;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 6px;
+  border-radius: 7px;
+}
+.sc-row:hover {
+  background: var(--bg-2);
+}
+.sc-row.lead {
+  background: rgba(201, 162, 75, 0.1);
+}
+.sc-rank {
+  text-align: center;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 12px;
+}
+.sc-goals {
+  text-align: center;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+.sc-name {
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sc-team {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
