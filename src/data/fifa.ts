@@ -260,31 +260,55 @@ function ageFrom(birth: string | null): number | null {
   return a;
 }
 
-export async function fetchSquad(idTeam: string): Promise<SquadPlayer[]> {
-  const d = await getJson<{ Players: RawPlayer[] }>(
+export interface Coach {
+  name: string;
+  photo: string | null;
+}
+
+interface RawOfficial {
+  Name: Localized;
+  Role: number; // 0 = head coach, 1 = assistant
+  PictureUrl: string | null;
+}
+
+function mapPlayer(p: RawPlayer): SquadPlayer {
+  return {
+    id: p.IdPlayer,
+    name: loc(p.PlayerName),
+    short: loc(p.ShortName) || loc(p.PlayerName),
+    jersey: p.JerseyNum,
+    position: loc(p.PositionLocalized, "—"),
+    positionOrder: p.Position ?? 9,
+    age: ageFrom(p.BirthDate),
+    heightCm: p.Height,
+    weightKg: p.Weight,
+    photo: sizedPhoto(p.PlayerPicture?.PictureUrl || p.PictureUrl),
+    goals: p.Goals,
+    yellow: p.YellowCards,
+    red: p.RedCards,
+  };
+}
+
+const bySquadOrder = (a: SquadPlayer, b: SquadPlayer) =>
+  a.positionOrder - b.positionOrder || (a.jersey ?? 99) - (b.jersey ?? 99);
+
+/** Full team: squad (players) + head coach, from one squad request. */
+export async function fetchTeam(
+  idTeam: string
+): Promise<{ players: SquadPlayer[]; coach: Coach | null }> {
+  const d = await getJson<{ Players: RawPlayer[]; Officials?: RawOfficial[] }>(
     `/teams/${idTeam}/squad?idCompetition=${COMPETITION}&idSeason=${SEASON}&language=${LANG}`
   );
-  return (d.Players ?? [])
-    .map((p): SquadPlayer => ({
-      id: p.IdPlayer,
-      name: loc(p.PlayerName),
-      short: loc(p.ShortName) || loc(p.PlayerName),
-      jersey: p.JerseyNum,
-      position: loc(p.PositionLocalized, "—"),
-      positionOrder: p.Position ?? 9,
-      age: ageFrom(p.BirthDate),
-      heightCm: p.Height,
-      weightKg: p.Weight,
-      photo: sizedPhoto(p.PlayerPicture?.PictureUrl || p.PictureUrl),
-      goals: p.Goals,
-      yellow: p.YellowCards,
-      red: p.RedCards,
-    }))
-    .sort(
-      (a, b) =>
-        a.positionOrder - b.positionOrder ||
-        (a.jersey ?? 99) - (b.jersey ?? 99)
-    );
+  const players = (d.Players ?? []).map(mapPlayer).sort(bySquadOrder);
+  const head = (d.Officials ?? []).find((o) => o.Role === 0);
+  const coach = head
+    ? { name: loc(head.Name), photo: sizedPhoto(head.PictureUrl) }
+    : null;
+  return { players, coach };
+}
+
+export async function fetchSquad(idTeam: string): Promise<SquadPlayer[]> {
+  return (await fetchTeam(idTeam)).players;
 }
 
 // ---------------------------------------------------------------------------

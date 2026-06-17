@@ -10,7 +10,8 @@ import {
 import { useAsync } from "../hooks";
 import { GroupsView } from "./GroupsView";
 import { FixturesView } from "./FixturesView";
-import { TeamsView, SquadDetail } from "./TeamsView";
+import { TeamsView } from "./TeamsView";
+import { TeamPage } from "./TeamPage";
 import { MatchDetail } from "./MatchDetail";
 import { NowHub } from "./NowHub";
 import type { NationTeam } from "../data/fifa";
@@ -101,7 +102,15 @@ export function DataPanel({
           </div>
         )}
         {!loading && !matchesState.error && openTeam && (
-          <SquadDetail team={openTeam} onBack={() => setOpenTeam(null)} />
+          <TeamPage
+            team={openTeam}
+            matches={matches}
+            onBack={() => setOpenTeam(null)}
+            onSelectMatch={(m) => {
+              setOpenTeam(null);
+              setSelected(m);
+            }}
+          />
         )}
         {!loading && !matchesState.error && !openTeam && selected && (
           <MatchDetail
@@ -128,7 +137,13 @@ export function DataPanel({
                 onSelect={setSelected}
               />
             )}
-            {tab === "teams" && <TeamsView teams={teams} />}
+            {tab === "teams" && (
+              <TeamsView
+                teams={teams}
+                matches={matches}
+                onSelectMatch={setSelected}
+              />
+            )}
           </>
         )}
       </div>
