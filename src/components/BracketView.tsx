@@ -28,7 +28,7 @@ interface Dims {
   rowH: number;
   cardH: number;
 }
-const colX = (round: number, d: Dims) => round * (d.colW + d.gap);
+const colX = (col: number, d: Dims) => col * (d.colW + d.gap);
 const rowY = (row: number, d: Dims) => (row + 0.5) * d.rowH;
 
 // ── View mode (actual results) ──────────────────────────────────────────────
@@ -50,10 +50,12 @@ function Slot({ team, won }: { team: MatchTeam; won: boolean }) {
 
 function ViewCard({
   node,
+  col,
   dims,
   onSelect,
 }: {
   node: BracketNode;
+  col: number;
   dims: Dims;
   onSelect: (m: Match) => void;
 }) {
@@ -65,7 +67,7 @@ function ViewCard({
     <button
       className={`bk-card status-${m.status}`}
       style={{
-        left: colX(node.round, dims),
+        left: colX(col, dims),
         top: rowY(node.row, dims) - dims.cardH / 2,
         width: dims.colW,
         height: dims.cardH,
@@ -118,12 +120,14 @@ function PSlot({
 
 function PredictCard({
   node,
+  col,
   dims,
   picks,
   byNo,
   onPick,
 }: {
   node: BracketNode;
+  col: number;
   dims: Dims;
   picks: Picks;
   byNo: Map<number, BracketNode>;
@@ -147,7 +151,7 @@ function PredictCard({
         finished ? "locked" : ""
       }`}
       style={{
-        left: colX(node.round, dims),
+        left: colX(col, dims),
         top: rowY(node.row, dims) - dims.cardH / 2,
         width: dims.colW,
         height: dims.cardH,
@@ -195,22 +199,39 @@ function Knockout({
   if (!rounds.some((r) => r.length))
     return <div className="panel-empty">Bracket not available yet.</div>;
 
-  const cols = rounds.length;
-  const leaves = Math.max(rounds[0].length, 1);
-  const colW = clamp((availW - 6) / (cols + 0.22 * (cols - 1)), 132, 240);
-  const gap = colW * 0.22;
-  const rowH = clamp(availH > 0 ? availH / leaves : 56, 50, 78);
-  const dims: Dims = { colW, gap, rowH, cardH: Math.min(rowH - 8, 52) };
+  // Mirrored grid: rounds 0..maxRound run left→centre, then mirror back out.
+  const maxRound = rounds.length - 1; // Final's round index
+  const cols = 2 * maxRound + 1; // R32…SF | Final | SF…R32
+  const colOf = (n: BracketNode) =>
+    n.side === "right" ? cols - 1 - n.round : n.round;
+
+  const r32 = rounds[0] ?? [];
+  const leftLeaves = r32.filter((n) => n.side !== "right").length;
+  const rightLeaves = r32.filter((n) => n.side === "right").length;
+  const leaves = Math.max(leftLeaves, rightLeaves, 1);
+
+  const colW = clamp((availW - 6) / (cols + 0.18 * (cols - 1)), 108, 200);
+  const gap = colW * 0.18;
+  const rowH = clamp(availH > 0 ? availH / leaves : 90, 58, 104);
+  const dims: Dims = { colW, gap, rowH, cardH: Math.min(rowH - 12, 64) };
   const width = cols * colW + (cols - 1) * gap;
   const height = leaves * rowH;
   const nodes = rounds.flat();
+
+  const headLabels = Array.from({ length: cols }, (_, c) =>
+    c <= maxRound ? ROUND_LABEL[c] : ROUND_LABEL[cols - 1 - c]
+  );
 
   return (
     <div className="bracket-scroll" ref={ref}>
       <div style={{ width, minWidth: width }}>
         <div className="bracket-headers" style={{ gap }}>
-          {ROUND_LABEL.map((l) => (
-            <div key={l} className="bracket-head" style={{ width: colW }}>
+          {headLabels.map((l, c) => (
+            <div
+              key={c}
+              className={`bracket-head ${c === maxRound ? "final" : ""}`}
+              style={{ width: colW }}
+            >
               {l}
             </div>
           ))}
@@ -222,9 +243,12 @@ function Knockout({
               node.children.map((childNo) => {
                 const child = byNo.get(childNo);
                 if (!child) return null;
-                const x1 = colX(child.round, dims) + colW;
+                const pCol = colOf(node);
+                const cCol = colOf(child);
+                const childLeft = cCol < pCol; // child sits left of its parent
+                const x1 = childLeft ? colX(cCol, dims) + colW : colX(cCol, dims);
+                const x2 = childLeft ? colX(pCol, dims) : colX(pCol, dims) + colW;
                 const y1 = rowY(child.row, dims);
-                const x2 = colX(node.round, dims);
                 const y2 = rowY(node.row, dims);
                 const midX = (x1 + x2) / 2;
                 return (
@@ -245,6 +269,7 @@ function Knockout({
               <PredictCard
                 key={node.matchNo}
                 node={node}
+                col={colOf(node)}
                 dims={dims}
                 picks={predict.picks}
                 byNo={byNo}
@@ -254,6 +279,7 @@ function Knockout({
               <ViewCard
                 key={node.matchNo}
                 node={node}
+                col={colOf(node)}
                 dims={dims}
                 onSelect={onSelect}
               />
@@ -392,11 +418,11 @@ export function BracketView({
       {mode === "predict" && (
         <div className="predict-bar">
           <span className="predict-info">
-            Tap a team to pick the winner — your picks fill the next rounds.
+            Tap a team to send them through.
             {score.total > 0 && (
               <b className="predict-score">
                 {" "}
-                {score.correct}/{score.total} correct
+                {score.correct}/{score.total} right
               </b>
             )}
           </span>

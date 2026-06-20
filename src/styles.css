@@ -2592,11 +2592,12 @@ button.mp-team.link:hover {
   text-align: center;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
   color: var(--muted);
 }
-/* The Final is the trophy — mark it gold. */
-.bracket-head:last-child {
+/* The Final sits in the centre column — mark it gold. */
+.bracket-head.final {
   color: var(--gold);
 }
 .bracket-canvas {
@@ -2615,16 +2616,18 @@ button.mp-team.link:hover {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
   background: var(--bg-2);
   border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 3px 7px;
+  border-radius: 8px;
+  padding: 0;
+  overflow: hidden;
   cursor: pointer;
   z-index: 1;
+  transition: border-color 0.12s ease, transform 0.12s ease;
 }
 .bk-card:hover {
   border-color: var(--accent);
+  transform: translateY(-1px);
 }
 .bk-card.status-live {
   border-color: rgba(255, 59, 92, 0.5);
@@ -2638,12 +2641,18 @@ button.mp-team.link:hover {
 .bk-slot {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 7px;
+  font-size: 12.5px;
+  padding: 4px 9px;
+  position: relative;
+}
+/* Hairline between the two teams in a card. */
+.bk-card .bk-slot + .bk-slot {
+  border-top: 1px solid var(--border);
 }
 .bk-flag {
-  width: 18px;
-  height: 12px;
+  width: 19px;
+  height: 13px;
   object-fit: cover;
   border-radius: 2px;
   flex-shrink: 0;
@@ -2651,18 +2660,34 @@ button.mp-team.link:hover {
 .bk-abbr {
   font-weight: 700;
   flex: 1;
+  letter-spacing: 0.2px;
+}
+/* The advancing team: a quiet tinted bar, not just coloured text. */
+.bk-slot.won {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 16%, transparent),
+    transparent
+  );
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 .bk-slot.won .bk-abbr {
   color: var(--accent);
 }
 .bk-score {
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.bk-slot.won .bk-score {
+  color: var(--text);
 }
 .bk-slot.tbd .bk-tbd,
 .bk-tbd {
   color: var(--muted);
   font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.3px;
 }
 .bk-live {
   position: absolute;
@@ -2670,15 +2695,18 @@ button.mp-team.link:hover {
   right: 5px;
 }
 .bracket-third {
-  margin-top: 14px;
+  margin: 16px auto 4px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
 }
 .bracket-third-label {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--muted);
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Group matchups */
@@ -3333,12 +3361,10 @@ button.mp-team.link:hover {
   color: inherit;
   font: inherit;
   cursor: pointer;
-  border-radius: 5px;
   text-align: left;
-  padding: 1px 2px;
 }
 .bk-slot.pickable:hover {
-  background: rgba(22, 193, 114, 0.16);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 .bk-card.predict .bk-slot.won .bk-abbr {
   color: var(--accent);

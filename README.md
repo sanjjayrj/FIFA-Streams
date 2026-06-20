@@ -124,10 +124,13 @@ season, change the `COMPETITION` / `SEASON` constants there.
 
 The **🏆 Bracket** button (topbar) opens a full-width overlay with three modes:
 
-- **Bracket** — the live knockout tree (Round of 32 → Final, plus the 3rd-place
-  play-off), drawn with SVG connector lines. The layout is **responsive**: it
-  measures the overlay (`useElementSize`) and sizes columns/rows to **fill the
-  screen** instead of sitting in a fixed strip. Each card shows flags and scores,
+- **Bracket** — the live knockout tree drawn as a **mirrored two-sided bracket**
+  (the classic World Cup look): Round of 32 fans in from both edges through R16 →
+  QF → SF to the **Final in the centre**, plus the 3rd-place play-off. Splitting
+  it in half means each side stacks only 8 rows, so the cards are about twice as
+  tall and far easier to read. The layout is **responsive**: it measures the
+  overlay (`useElementSize`) and sizes columns/rows to **fill the screen**. Each
+  card shows flags and scores,
   pulses for live matches, and opens the full match detail (with the "Watch this
   match" stream finder) on tap. As the group stage finishes, knockout slots
   **auto-fill** from the 30-second match poll — the placeholders (`2A`, `1C`,

@@ -1101,7 +1101,8 @@ export interface BracketNode {
   matchNo: number;
   round: number; // 0 = Round of 32 … 4 = Final
   children: number[]; // feeding match numbers (winners), [] for Round of 32
-  row: number; // vertical slot used to draw the tree
+  row: number; // vertical slot within its side (both sides share a 0-based scale)
+  side: "left" | "right" | "final"; // which half of the mirrored bracket
 }
 
 export interface Bracket {
@@ -1133,28 +1134,44 @@ export function buildBracket(matches: Match[]): Bracket {
       (n): n is number => n != null && byNo.has(n)
     );
 
-  // Assign each match a vertical row: leaves get sequential slots, internal
-  // nodes sit at the midpoint of their two children (a real bracket layout).
+  // Mirrored layout: the Final sits in the centre, its two semi-final subtrees
+  // fan out to the left and right halves. Each half gets its own 0-based row
+  // scale (leaves sequential, internal nodes at the midpoint of their children),
+  // so both halves stack only 8 rows tall instead of one column of 16.
   const rowOf = new Map<number, number>();
-  let nextLeaf = 0;
-  const assign = (no: number): number => {
+  const sideOf = new Map<number, "left" | "right" | "final">();
+  let cursor = 0;
+  const layoutSide = (no: number, side: "left" | "right"): number => {
+    sideOf.set(no, side);
     const m = byNo.get(no);
-    if (!m) return nextLeaf++;
-    const kids = childrenOf(m);
+    const kids = m ? childrenOf(m) : [];
     if (kids.length < 2) {
-      const r = nextLeaf++;
+      const r = cursor++;
       rowOf.set(no, r);
       return r;
     }
-    const center = (assign(kids[0]) + assign(kids[1])) / 2;
+    const center = (layoutSide(kids[0], side) + layoutSide(kids[1], side)) / 2;
     rowOf.set(no, center);
     return center;
   };
 
   const finalMatch = matches.find((m) => m.stage === "Final");
-  if (finalMatch?.matchNumber != null) assign(finalMatch.matchNumber);
+  const finalNo = finalMatch?.matchNumber ?? null;
+  if (finalNo != null) {
+    sideOf.set(finalNo, "final");
+    const [leftFeeder, rightFeeder] = childrenOf(finalMatch!);
+    cursor = 0;
+    const leftRow = leftFeeder != null ? layoutSide(leftFeeder, "left") : 0;
+    cursor = 0;
+    const rightRow = rightFeeder != null ? layoutSide(rightFeeder, "right") : 0;
+    rowOf.set(finalNo, (leftRow + rightRow) / 2);
+  }
   // Cover any matches not reachable from the final (defensive).
-  for (const [no] of byNo) if (!rowOf.has(no)) assign(no);
+  for (const [no] of byNo)
+    if (!rowOf.has(no)) {
+      rowOf.set(no, cursor++);
+      if (!sideOf.has(no)) sideOf.set(no, "left");
+    }
 
   const rounds: BracketNode[][] = KNOCKOUT_ROUNDS.map(() => []);
   for (const [no, m] of byNo) {
@@ -1165,6 +1182,7 @@ export function buildBracket(matches: Match[]): Bracket {
       round,
       children: childrenOf(m),
       row: rowOf.get(no) ?? 0,
+      side: sideOf.get(no) ?? "left",
     });
   }
   rounds.forEach((r) => r.sort((a, b) => a.row - b.row));
