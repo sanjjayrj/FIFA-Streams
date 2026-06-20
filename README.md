@@ -120,6 +120,35 @@ proxy, no API key. Match data auto-refreshes every 30 seconds.
 All of this lives in `src/data/fifa.ts`. To point at a different competition or
 season, change the `COMPETITION` / `SEASON` constants there.
 
+### Knockout bracket & predictor
+
+The **🏆 Bracket** button (topbar) opens a full-width overlay with three modes:
+
+- **Bracket** — the live knockout tree (Round of 32 → Final, plus the 3rd-place
+  play-off), drawn with SVG connector lines. The layout is **responsive**: it
+  measures the overlay (`useElementSize`) and sizes columns/rows to **fill the
+  screen** instead of sitting in a fixed strip. Each card shows flags and scores,
+  pulses for live matches, and opens the full match detail (with the "Watch this
+  match" stream finder) on tap. As the group stage finishes, knockout slots
+  **auto-fill** from the 30-second match poll — the placeholders (`2A`, `1C`,
+  `W73`…) become real teams with no action needed, and their streams light up
+  through the same discovery path as every other fixture.
+- **Predict** — fill in your own bracket. Tap a team to pick it as the winner and
+  the pick **propagates into the next round** automatically; change an earlier
+  pick and any now-impossible downstream picks are cleared. Once a match is
+  actually played, **reality overrides your pick** for that slot, and a running
+  **score** (`correct/total` over decided matches you predicted) shows in the bar.
+  Picks are saved in `localStorage` (`fifa.picks`). A slot becomes pickable only
+  when both its teams are known, so Predict comes alive once the Round of 32 is
+  set (~June 27). Logic lives in `src/lib/predictor.ts` (pure functions:
+  `resolveMatch`, `prunePicks`, `actualWinner`, `predictionScore`).
+- **Groups** — the group-stage matchups laid out per group (flags,
+  who-plays-whom), each tappable into its match detail.
+
+The tree is built by `buildBracket` in `src/data/fifa.ts` from each knockout
+match's `MatchNumber` and `W<n>` feeder placeholders; UI in
+`src/components/BracketView.tsx`.
+
 ### Goal & kickoff alerts (followed teams)
 
 Follow teams (the ☆ in the **Teams** tab). While the app is open, the match feed

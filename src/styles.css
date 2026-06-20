@@ -2528,19 +2528,34 @@ button.mp-team.link:hover {
 }
 .bracket-overlay-body {
   flex: 1;
-  overflow: auto;
-  padding: 20px 22px 30px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px 22px 18px;
+  display: flex;
+  flex-direction: column;
 }
 .bracket-detail-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.bracket-detail-wrap .match-detail {
   max-width: 640px;
   margin: 0 auto;
 }
 
-/* Bracket / group-matchups view */
+/* Bracket / group-matchups view — fills the overlay, the tree scrolls inside. */
+.bracket-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 .bracket-modes {
   display: flex;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
 }
 .mode-btn {
   flex: 1;
@@ -2560,9 +2575,14 @@ button.mp-team.link:hover {
 }
 
 .bracket-scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.bracket-groups-mode {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 .bracket-headers {
   display: flex;
@@ -3264,4 +3284,82 @@ button.mp-team.link:hover {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.3px;
+}
+
+/* ───────────────────────── Bracket predictor ───────────────────────── */
+.predict-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.predict-info {
+  line-height: 1.4;
+}
+.predict-score {
+  color: var(--accent);
+}
+.predict-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.predict-reset:hover {
+  border-color: var(--accent);
+}
+.bk-card.predict {
+  cursor: default;
+}
+.bk-card.predict:hover {
+  border-color: var(--border);
+}
+.bk-slot.pickable {
+  width: 100%;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  border-radius: 5px;
+  text-align: left;
+  padding: 1px 2px;
+}
+.bk-slot.pickable:hover {
+  background: rgba(22, 193, 114, 0.16);
+}
+.bk-card.predict .bk-slot.won .bk-abbr {
+  color: var(--accent);
+}
+.bk-mark {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.bk-mark.ok {
+  background: var(--accent);
+  color: #04240f;
+}
+.bk-mark.no {
+  background: var(--live);
+  color: #fff;
 }

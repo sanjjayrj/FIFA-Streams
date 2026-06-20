@@ -71,6 +71,22 @@ export function usePersistentState<T>(
   return [value, setValue];
 }
 
+/** Live size of a referenced element (via ResizeObserver) — for fit-to-screen. */
+export function useElementSize() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() =>
+      setSize({ width: el.clientWidth, height: el.clientHeight })
+    );
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return { ref, width: size.width, height: size.height };
+}
+
 /** Current time, refreshed every `intervalMs` — for live countdowns. */
 export function useNow(intervalMs = 1000): number {
   const [now, setNow] = useState(() => Date.now());

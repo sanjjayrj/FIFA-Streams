@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Check, RotateCcw, X } from "lucide-react";
 import {
   buildBracket,
   flagUrl,
@@ -7,19 +8,32 @@ import {
   type Match,
   type MatchTeam,
 } from "../data/fifa";
+import { useElementSize, usePersistentState } from "../hooks";
+import {
+  actualWinner,
+  predictionScore,
+  prunePicks,
+  resolveMatch,
+  type PickTeam,
+  type Picks,
+} from "../lib/predictor";
 
 const ROUND_LABEL = ["R32", "R16", "QF", "SF", "Final"];
+const clamp = (v: number, lo: number, hi: number) =>
+  Math.max(lo, Math.min(hi, v));
 
-// Fixed geometry so the SVG connector lines line up exactly with the cards.
-const COL_W = 150;
-const GAP = 30;
-const ROW_H = 56;
-const CARD_H = 46;
-const colX = (round: number) => round * (COL_W + GAP);
-const rowY = (row: number) => (row + 0.5) * ROW_H;
+interface Dims {
+  colW: number;
+  gap: number;
+  rowH: number;
+  cardH: number;
+}
+const colX = (round: number, d: Dims) => round * (d.colW + d.gap);
+const rowY = (row: number, d: Dims) => (row + 0.5) * d.rowH;
 
+// ── View mode (actual results) ──────────────────────────────────────────────
 function Slot({ team, won }: { team: MatchTeam; won: boolean }) {
-  if (team.code) {
+  if (team.code)
     return (
       <div className={`bk-slot ${won ? "won" : ""}`}>
         <img className="bk-flag" src={flagUrl(team.code)!} alt="" />
@@ -27,7 +41,6 @@ function Slot({ team, won }: { team: MatchTeam; won: boolean }) {
         <span className="bk-score">{team.score ?? ""}</span>
       </div>
     );
-  }
   return (
     <div className="bk-slot tbd">
       <span className="bk-tbd">{team.placeholder || "TBD"}</span>
@@ -35,11 +48,13 @@ function Slot({ team, won }: { team: MatchTeam; won: boolean }) {
   );
 }
 
-function Card({
+function ViewCard({
   node,
+  dims,
   onSelect,
 }: {
   node: BracketNode;
+  dims: Dims;
   onSelect: (m: Match) => void;
 }) {
   const m = node.match;
@@ -50,9 +65,10 @@ function Card({
     <button
       className={`bk-card status-${m.status}`}
       style={{
-        left: colX(node.round),
-        top: rowY(node.row) - CARD_H / 2,
-        width: COL_W,
+        left: colX(node.round, dims),
+        top: rowY(node.row, dims) - dims.cardH / 2,
+        width: dims.colW,
+        height: dims.cardH,
       }}
       onClick={() => onSelect(m)}
       title="Open match detail"
@@ -64,34 +80,137 @@ function Card({
   );
 }
 
-function Knockout({
-  matches,
-  onSelect,
+// ── Predict mode ─────────────────────────────────────────────────────────────
+function PSlot({
+  team,
+  placeholder,
+  highlight,
+  pickable,
+  onClick,
 }: {
-  matches: Match[];
-  onSelect: (m: Match) => void;
+  team: PickTeam | null;
+  placeholder: string | null;
+  highlight: boolean;
+  pickable: boolean;
+  onClick: () => void;
 }) {
-  const { rounds, thirdPlace } = useMemo(() => buildBracket(matches), [matches]);
-  const byNo = useMemo(() => {
-    const map = new Map<number, BracketNode>();
-    rounds.flat().forEach((n) => map.set(n.matchNo, n));
-    return map;
-  }, [rounds]);
+  if (!team)
+    return (
+      <div className="bk-slot tbd">
+        <span className="bk-tbd">{placeholder || "TBD"}</span>
+      </div>
+    );
+  const inner = (
+    <>
+      <img className="bk-flag" src={flagUrl(team.code)!} alt="" />
+      <span className="bk-abbr">{team.code}</span>
+    </>
+  );
+  const cls = `bk-slot ${highlight ? "won" : ""} ${pickable ? "pickable" : ""}`;
+  return pickable ? (
+    <button className={cls} onClick={onClick} title={`Pick ${team.name}`}>
+      {inner}
+    </button>
+  ) : (
+    <div className={cls}>{inner}</div>
+  );
+}
 
-  if (!rounds.some((r) => r.length)) {
+function PredictCard({
+  node,
+  dims,
+  picks,
+  byNo,
+  onPick,
+}: {
+  node: BracketNode;
+  dims: Dims;
+  picks: Picks;
+  byNo: Map<number, BracketNode>;
+  onPick: (matchNo: number, team: PickTeam) => void;
+}) {
+  const r = resolveMatch(node, picks, byNo);
+  const finished = node.match.status === "finished";
+  const aw = actualWinner(node.match);
+  const myPick = picks[node.matchNo];
+  const pickable = !finished && !!r.home && !!r.away;
+  const hiHome = finished
+    ? !!aw && aw.code === r.home?.code
+    : !!myPick && myPick.code === r.home?.code;
+  const hiAway = finished
+    ? !!aw && aw.code === r.away?.code
+    : !!myPick && myPick.code === r.away?.code;
+  const correct = finished && myPick ? myPick.code === aw?.code : null;
+  return (
+    <div
+      className={`bk-card predict status-${node.match.status} ${
+        finished ? "locked" : ""
+      }`}
+      style={{
+        left: colX(node.round, dims),
+        top: rowY(node.row, dims) - dims.cardH / 2,
+        width: dims.colW,
+        height: dims.cardH,
+      }}
+    >
+      {correct != null && (
+        <span className={`bk-mark ${correct ? "ok" : "no"}`}>
+          {correct ? <Check size={11} /> : <X size={11} />}
+        </span>
+      )}
+      <PSlot
+        team={r.home}
+        placeholder={node.match.home.placeholder}
+        highlight={hiHome}
+        pickable={pickable}
+        onClick={() => r.home && onPick(node.matchNo, r.home)}
+      />
+      <PSlot
+        team={r.away}
+        placeholder={node.match.away.placeholder}
+        highlight={hiAway}
+        pickable={pickable}
+        onClick={() => r.away && onPick(node.matchNo, r.away)}
+      />
+    </div>
+  );
+}
+
+// ── Shared tree renderer ─────────────────────────────────────────────────────
+function Knockout({
+  rounds,
+  byNo,
+  thirdPlace,
+  onSelect,
+  predict,
+}: {
+  rounds: BracketNode[][];
+  byNo: Map<number, BracketNode>;
+  thirdPlace: Match | null;
+  onSelect: (m: Match) => void;
+  predict: { picks: Picks; onPick: (n: number, t: PickTeam) => void } | null;
+}) {
+  const { ref, width: availW, height: availH } = useElementSize();
+
+  if (!rounds.some((r) => r.length))
     return <div className="panel-empty">Bracket not available yet.</div>;
-  }
 
+  const cols = rounds.length;
   const leaves = Math.max(rounds[0].length, 1);
-  const width = rounds.length * COL_W + (rounds.length - 1) * GAP;
-  const height = leaves * ROW_H;
+  const colW = clamp((availW - 6) / (cols + 0.22 * (cols - 1)), 132, 240);
+  const gap = colW * 0.22;
+  const rowH = clamp(availH > 0 ? availH / leaves : 56, 50, 78);
+  const dims: Dims = { colW, gap, rowH, cardH: Math.min(rowH - 8, 52) };
+  const width = cols * colW + (cols - 1) * gap;
+  const height = leaves * rowH;
+  const nodes = rounds.flat();
 
   return (
-    <div className="bracket-scroll">
-      <div style={{ width }}>
-        <div className="bracket-headers" style={{ gap: GAP }}>
+    <div className="bracket-scroll" ref={ref}>
+      <div style={{ width, minWidth: width }}>
+        <div className="bracket-headers" style={{ gap }}>
           {ROUND_LABEL.map((l) => (
-            <div key={l} className="bracket-head" style={{ width: COL_W }}>
+            <div key={l} className="bracket-head" style={{ width: colW }}>
               {l}
             </div>
           ))}
@@ -99,14 +218,14 @@ function Knockout({
 
         <div className="bracket-canvas" style={{ width, height }}>
           <svg className="bracket-lines" width={width} height={height}>
-            {rounds.flat().map((node) =>
+            {nodes.map((node) =>
               node.children.map((childNo) => {
                 const child = byNo.get(childNo);
                 if (!child) return null;
-                const x1 = colX(child.round) + COL_W;
-                const y1 = rowY(child.row);
-                const x2 = colX(node.round);
-                const y2 = rowY(node.row);
+                const x1 = colX(child.round, dims) + colW;
+                const y1 = rowY(child.row, dims);
+                const x2 = colX(node.round, dims);
+                const y2 = rowY(node.row, dims);
                 const midX = (x1 + x2) / 2;
                 return (
                   <path
@@ -121,12 +240,28 @@ function Knockout({
             )}
           </svg>
 
-          {rounds.flat().map((node) => (
-            <Card key={node.matchNo} node={node} onSelect={onSelect} />
-          ))}
+          {nodes.map((node) =>
+            predict ? (
+              <PredictCard
+                key={node.matchNo}
+                node={node}
+                dims={dims}
+                picks={predict.picks}
+                byNo={byNo}
+                onPick={predict.onPick}
+              />
+            ) : (
+              <ViewCard
+                key={node.matchNo}
+                node={node}
+                dims={dims}
+                onSelect={onSelect}
+              />
+            )
+          )}
         </div>
 
-        {thirdPlace && (
+        {thirdPlace && !predict && (
           <div className="bracket-third">
             <span className="bracket-third-label">3rd place play-off</span>
             <button
@@ -155,6 +290,7 @@ function Knockout({
   );
 }
 
+// ── Group matchups ───────────────────────────────────────────────────────────
 function MiniTeam({ team }: { team: MatchTeam }) {
   if (!team.code)
     return <span className="gm-tbd">{team.placeholder || "TBD"}</span>;
@@ -174,9 +310,8 @@ function Groups({
   onSelect: (m: Match) => void;
 }) {
   const groups = useMemo(() => groupMatchups(matches), [matches]);
-  if (!groups.length) {
+  if (!groups.length)
     return <div className="panel-empty">No group matchups yet.</div>;
-  }
   return (
     <div className="gm-grid">
       {groups.map((g) => (
@@ -205,6 +340,7 @@ function Groups({
   );
 }
 
+// ── Container ────────────────────────────────────────────────────────────────
 export function BracketView({
   matches,
   onSelect,
@@ -212,27 +348,78 @@ export function BracketView({
   matches: Match[];
   onSelect: (m: Match) => void;
 }) {
-  const [mode, setMode] = useState<"bracket" | "groups">("bracket");
+  const [mode, setMode] = useState<"bracket" | "predict" | "groups">("bracket");
+  const [picks, setPicks] = usePersistentState<Picks>("fifa.picks", {});
+
+  const { rounds, thirdPlace } = useMemo(
+    () => buildBracket(matches),
+    [matches]
+  );
+  const byNo = useMemo(() => {
+    const m = new Map<number, BracketNode>();
+    rounds.flat().forEach((n) => m.set(n.matchNo, n));
+    return m;
+  }, [rounds]);
+  const nodes = useMemo(() => rounds.flat(), [rounds]);
+
+  const onPick = (matchNo: number, team: PickTeam) =>
+    setPicks((prev) => prunePicks({ ...prev, [matchNo]: team }, nodes, byNo));
+
+  const score = useMemo(
+    () => predictionScore(nodes, picks),
+    [nodes, picks]
+  );
+  const pickCount = Object.keys(picks).length;
+
   return (
     <div className="bracket-view">
       <div className="bracket-modes">
-        <button
-          className={`mode-btn ${mode === "bracket" ? "active" : ""}`}
-          onClick={() => setMode("bracket")}
-        >
-          Knockout bracket
-        </button>
-        <button
-          className={`mode-btn ${mode === "groups" ? "active" : ""}`}
-          onClick={() => setMode("groups")}
-        >
-          Group matchups
-        </button>
+        {(["bracket", "predict", "groups"] as const).map((id) => (
+          <button
+            key={id}
+            className={`mode-btn ${mode === id ? "active" : ""}`}
+            onClick={() => setMode(id)}
+          >
+            {id === "bracket"
+              ? "Bracket"
+              : id === "predict"
+              ? "Predict"
+              : "Groups"}
+          </button>
+        ))}
       </div>
-      {mode === "bracket" ? (
-        <Knockout matches={matches} onSelect={onSelect} />
+
+      {mode === "predict" && (
+        <div className="predict-bar">
+          <span className="predict-info">
+            Tap a team to pick the winner — your picks fill the next rounds.
+            {score.total > 0 && (
+              <b className="predict-score">
+                {" "}
+                {score.correct}/{score.total} correct
+              </b>
+            )}
+          </span>
+          {pickCount > 0 && (
+            <button className="predict-reset" onClick={() => setPicks({})}>
+              <RotateCcw size={13} /> Reset
+            </button>
+          )}
+        </div>
+      )}
+
+      {mode === "groups" ? (
+        <div className="bracket-groups-mode">
+          <Groups matches={matches} onSelect={onSelect} />
+        </div>
       ) : (
-        <Groups matches={matches} onSelect={onSelect} />
+        <Knockout
+          rounds={rounds}
+          byNo={byNo}
+          thirdPlace={thirdPlace}
+          onSelect={onSelect}
+          predict={mode === "predict" ? { picks, onPick } : null}
+        />
       )}
     </div>
   );
